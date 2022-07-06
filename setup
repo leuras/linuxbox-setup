@@ -1,11 +1,42 @@
 #!/bin/bash
 
+__BASE_DIR=$(dirname "$0")
+
+# import functions definition
+. $__BASE_DIR/lib/installer.sh
+
 apt update && apt install \
-  git \
-  zsh \
-  tilix \
-  openjdk-11-jdk \
-  python3 \
-  python3-pip \
-  nodejs \
-  npm \
+	wget \
+	curl \
+	jq \
+	gdebi \
+    git \
+    zsh \
+    tilix \
+    openjdk-11-jdk \
+    python3 \
+    python3-pip
+
+# SublimeText
+SUBLIME_BINARY="sublime-text_build-4126_amd64.deb"
+SUBLIME_URL="https://download.sublimetext.com/${SUBLIME_BINARY}"
+SUBLIME_STATUS=$(deb_package_installed "sublime-text")
+
+if [[ -z "${SUBLIME_STATUS}" ]]; then
+    get_installer "${SUBLIME_URL}" "${SUBLIME_BINARY}"
+    install_deb_package "${SUBLIME_BINARY}"
+fi;
+
+# VSCode
+VSCODE_BINARY="code_1.68.1-1655263094_amd64.deb"
+VSCODE_URL="https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64"
+VSCODE_STATUS=$(deb_package_installed "code")
+
+if [[ -z "${VSCODE_STATUS}" ]]; then
+    get_installer "${VSCODE_URL}" "${VSCODE_BINARY}"
+    install_deb_package "${VSCODE_BINARY}"
+fi;
+
+# clean up
+rm -rf "${OUTPUT_DIR}"
+
