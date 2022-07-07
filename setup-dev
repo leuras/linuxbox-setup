@@ -17,15 +17,20 @@ apt update && apt install \
     openjdk-11-jdk \
     python3 \
     python3-pip \
+    python3-venv \
     apt-transport-https \
     ca-certificates \
     software-properties-common \
-    lsb-release
+    lsb-release \
+    fzf
 
 # snap packages
 snap install \
     mockoon \
-    ngrok    
+    ngrok
+
+# zsh as default shell
+chsh -s $(which zsh)    
 
 # SublimeText
 SUBLIME_BINARY="sublime-text_build-4126_amd64.deb"
@@ -64,7 +69,7 @@ if [[ -z "${DOCKER_STATUS}" ]]; then
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
     add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
     apt update && apt install docker-ce
-fi;    
+fi;
 
 # clean up
 delete_temp_files
