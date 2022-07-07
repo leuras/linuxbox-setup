@@ -22,6 +22,6 @@ deb_package_installed () {
     echo "$(dpkg-query -W -f='${Status}' ${package} 2> /dev/null)"
 }
 
-clean () {
+delete_temp_files () {
     rm -rf "${__LINUXBOX_SETUP_DIR}"
 }
