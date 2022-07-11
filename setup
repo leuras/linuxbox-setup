@@ -25,7 +25,6 @@ apt update && apt install \
 
 # snap packages
 snap install \
-    mockoon \
     ngrok
 
 # zsh as default shell
@@ -78,6 +77,17 @@ INSOMNIA_STATUS=$(deb_package_installed "insomnia")
 if [[ -z "${INSOMNIA_STATUS}" ]]; then
     get_installer "${INSOMNIA_URL}" "${INSOMNIA_BINARY}"
     install_deb_package "${INSOMNIA_BINARY}"
+fi;
+
+# Mockoon
+MOCKOON_VERSION="1.19.0"
+MOCKOON_BINARY="mockoon-${MOCKOON_VERSION}.deb"
+MOCKOON_URL="https://github.com/mockoon/mockoon/releases/download/v${MOCKOON_VERSION}/${MOCKOON_BINARY}"
+MOCKOON_STATUS=$(deb_package_installed "mockoon")
+
+if [[ -z "${MOCKOON_STATUS}" ]]; then
+    get_installer "${MOCKOON_URL}" "${MOCKOON_BINARY}"
+    install_deb_package "${MOCKOON_BINARY}"
 fi;
 
 # clean up
