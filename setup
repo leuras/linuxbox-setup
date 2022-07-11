@@ -21,7 +21,8 @@ apt update && apt install \
     ca-certificates \
     software-properties-common \
     lsb-release \
-    fzf
+    fzf \
+    flameshot
 
 # snap packages
 snap install \
