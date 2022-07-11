@@ -11,7 +11,6 @@ apt update && apt install \
     curl \
     jq \
     gdebi \
-    git \
     zsh \
     tilix \
     openjdk-11-jdk \
@@ -69,6 +68,16 @@ if [[ -z "${DOCKER_STATUS}" ]]; then
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
     add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
     apt update && apt install docker-ce
+fi;
+
+# Insomnia
+INSOMNIA_BINARY="Insomnia.Core-2022.4.2.deb"
+INSOMNIA_URL="https://updates.insomnia.rest/downloads/ubuntu/latest?&app=com.insomnia.app&source=website"
+INSOMNIA_STATUS=$(deb_package_installed "insomnia")
+
+if [[ -z "${INSOMNIA_STATUS}" ]]; then
+    get_installer "${INSOMNIA_URL}" "${INSOMNIA_BINARY}"
+    install_deb_package "${INSOMNIA_BINARY}"
 fi;
 
 # clean up
