@@ -22,6 +22,12 @@ deb_package_installed () {
     echo "$(dpkg-query -W -f='${Status}' ${package} 2> /dev/null)"
 }
 
+binary_installed () {
+    local binary="$1"
+
+    echo "$(command -v ${binary} 2> /dev/null)"
+}
+
 delete_temp_files () {
     rm -rf "${__LINUXBOX_SETUP_DIR}"
 }

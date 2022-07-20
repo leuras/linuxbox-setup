@@ -70,6 +70,17 @@ if [[ -z "${DOCKER_STATUS}" ]]; then
     apt update && apt install docker-ce
 fi;
 
+# Docker Compose
+DOCKER_COMPOSE_VERSION="v2.7.0"
+DOCKER_COMPOSE_URL="https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)"
+DOCKER_COMPOSE_OUTPUT="/usr/local/bin"
+DOCKER_COMPOSE_STATUS=$(binary_installed "docker-compose")
+
+if [[ -z "${DOCKER_COMPOSE_STATUS}" ]]; then
+    curl -L "${DOCKER_COMPOSE_URL}" -o "${DOCKER_COMPOSE_OUTPUT}/docker-compose"
+    chmod +x "${DOCKER_COMPOSE_OUTPUT}/docker-compose"
+fi;
+
 # Insomnia
 INSOMNIA_BINARY="Insomnia.Core-2022.4.2.deb"
 INSOMNIA_URL="https://updates.insomnia.rest/downloads/ubuntu/latest?&app=com.insomnia.app&source=website"
