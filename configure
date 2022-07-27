@@ -74,3 +74,12 @@ if [[ "${USER}" == "pentester" ]]; then
         source "${HOME}/.zprofile"
     fi;
 fi;
+
+# Git Prune Script
+LOCAL_BIN_PATH="${HOME}/.local/bin"
+if [[ ! -f  "${LOCAL_BIN_PATH}/git-prune" ]]; then
+    mkdir -p "${LOCAL_BIN_PATH}"
+
+    echo "[+] Copying git-prune script to ${LOCAL_BIN_PATH}"
+    cp git-prune "${LOCAL_BIN_PATH}" && chmod +x "${LOCAL_BIN_PATH}/git-prune"
+fi;
