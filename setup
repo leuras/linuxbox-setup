@@ -6,30 +6,32 @@ __BASE_DIR=$(dirname "$0")
 . $__BASE_DIR/lib/installer.sh
 . $__BASE_DIR/setup-profile
 
-# debian packages
-apt update && apt install \
+# required debian packages
+# apt update && apt install -y \
+#     wget \
+#     curl \
+#     jq \
+#     zip \
+#     gdebi \
+#     apt-transport-https \
+#     ca-certificates \
+#     software-properties-common \
+#     lsb-release \
+#     vim \
+#     zsh \
+#     fzf \
+#     tilix \
+#     openjdk-11-jdk \
+#     python3 \
+#     python3-pip \
+#     python3-venv \
+#     flameshot
+
+apt update && apt install -y \
     wget \
     curl \
-    jq \
     gdebi \
-    zsh \
-    tilix \
-    vim \
-    uniq \
-    openjdk-11-jdk \
-    python3 \
-    python3-pip \
-    python3-venv \
-    apt-transport-https \
-    ca-certificates \
-    software-properties-common \
-    lsb-release \
-    fzf \
-    flameshot
-
-# snap packages
-snap install \
-    ngrok
+    lsb-release
 
 # zsh as default shell
 chsh -s $(which zsh)
@@ -44,8 +46,11 @@ deb "dbeaver-ce" "${DBEAVER_URL}" "false"
 # executables
 binary "docker-compose" "${DOCKER_COMPOSE_URL}" "${DOCKER_COMPOSE_RELEASE}" "true"
 
+# installation scripts
+shell_script "sdk" "${SDKMAN_URL}" 
+
 # ppa sources
-custom_ppa "docker-ce" "${DOCKER_GPG_URL}" "${DOCKER_PPA_URL}"
+# custom_ppa "docker-ce" "${DOCKER_GPG_URL}" "${DOCKER_PPA_URL}"
 
 # clean up
 cleanup_installation

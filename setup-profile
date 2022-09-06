@@ -17,7 +17,7 @@ VSCODE_URL="https://code.visualstudio.com/sha/download?build=stable&os=linux-deb
 INSOMNIA_URL="https://updates.insomnia.rest/downloads/ubuntu/latest?&app=com.insomnia.app&source=website"
 
 # DBeaver
-DBEAVER_URL"https://dbeaver.io/files/dbeaver-ce_latest_amd64.deb"
+DBEAVER_URL="https://dbeaver.io/files/dbeaver-ce_latest_amd64.deb"
 
 # Binaries executable with a direct download link
 # ====================================================
@@ -25,6 +25,9 @@ DBEAVER_URL"https://dbeaver.io/files/dbeaver-ce_latest_amd64.deb"
 # Docker Compose
 DOCKER_COMPOSE_URL="https://github.com/docker/compose/releases/latest"
 DOCKER_COMPOSE_RELEASE="docker-compose-$(uname -s)-$(uname -m)"
+
+# SDKman
+SDKMAN_URL="https://get.sdkman.io"
 
 # Custom PPA package source
 # ====================================================

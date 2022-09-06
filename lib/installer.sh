@@ -27,16 +27,30 @@ binary () {
     local release="${3}"
     local use_crawler="${4}"
 
-    local binary="/usr/local/bin/${package}"
-    local binary_path=$(__is_binary_installed "${package}")
+    local installation_status=$(__is_binary_installed "${package}")
 
-    if [[ -z "${binary_path}" ]]; then
+    if [[ -z "${installation_status}" ]]; then
 
         if [[ "${use_crawler}" == "true" ]]; then
-            url=$(__download_link_crawler "${release}" "${url}")
+            url=$(__download_link_crawler "${release}" "${url}" "" "")
         fi
 
-        __install_binary "${url}""${binary}"
+        __download_package "${url}" "${package}"
+        __install_binary "${package}"
+    fi
+}
+
+shell_script () {
+    local package="$1"
+    local url="$2"
+
+    local binary="${package}.sh"
+    local installation_status=$(__is_binary_installed "${package}")
+
+    if [[ -z "${installation_status}" ]]; then
+
+        __download_package "${url}" "${binary}"
+        __install_shell_script "${binary}"
     fi
 }
 
@@ -73,11 +87,31 @@ __install_deb () {
 }
 
 __install_binary () {
-    local url="$1"
-    local binary="$2"
+    local package="$1"
 
-    curl -L "${url}" -o "${binary}"
-    chmod +x "${binary}"
+    local binary="${__LINUXBOX_SETUP_DIR}/${package}"
+    local file_info=$(file -b "${binary}" | awk -F "," '{print $1}')
+
+    case "${file_info}" in
+        "ELF 64-bit LSB executable")
+            local installation_path="/usr/local/bin/${package}"
+
+            cp "${binary}" "${installation_path}"
+            chmod +x "${installation_path}"
+            ;;
+        "gzip compressed data")
+            local installation_path="/opt/${package}"
+
+            mkdir -p "${installation_path}"
+            tar -xvzf "${binary}" -C "${installation_path}"
+            ;;
+    esac
+}
+
+__install_shell_script () {
+    local binary="${__LINUXBOX_SETUP_DIR}/${1}"
+
+    chmod +x "${binary}" && cat "${binary}" | bash
 }
 
 __is_deb_package_installed () {
@@ -95,8 +129,8 @@ __is_binary_installed () {
 __download_link_crawler () {
     local package="$1"
     local url="$2"
-    local extension="${2:-\.deb}"
-    local platform="${3:-amd}"
+    local extension="${3:-deb}"
+    local platform="${4:-amd64}"
 
-    echo "$(curl -sL "${url}" | grep -Eio "(https?:\/{2}[a-z0-9\._?=\/-]+${package}[a-z0-9_-]+${extension})" | grep -Ei "${platform}" | uniq)"
+    echo "$(curl -sL "${url}" | grep -Eio "(https?:\/{2}[a-z0-9\._?=\/-]+${package}[a-z0-9_-]+\.?${extension})" | grep -Ei "${platform}" | uniq)"
 }
