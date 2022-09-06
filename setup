@@ -2,8 +2,9 @@
 
 __BASE_DIR=$(dirname "$0")
 
-# import functions definition
+# import functions definition and variables
 . $__BASE_DIR/lib/installer.sh
+. $__BASE_DIR/setup-profile
 
 # debian packages
 apt update && apt install \
@@ -13,6 +14,8 @@ apt update && apt install \
     gdebi \
     zsh \
     tilix \
+    vim \
+    uniq \
     openjdk-11-jdk \
     python3 \
     python3-pip \
@@ -29,78 +32,20 @@ snap install \
     ngrok
 
 # zsh as default shell
-chsh -s $(which zsh)    
+chsh -s $(which zsh)
 
-# SublimeText
-SUBLIME_BINARY="sublime-text_build-4126_amd64.deb"
-SUBLIME_URL="https://download.sublimetext.com/${SUBLIME_BINARY}"
-SUBLIME_STATUS=$(deb_package_installed "sublime-text")
+# .deb installer packages
+deb "sublime-text" "${SUBLIME_URL}" "true"
+deb "mockoon" "${MOCKOON_URL}" "true"
+deb "code" "${VSCODE_URL}" "false"
+deb "insomnia" "${INSOMNIA_URL}" "false"
+deb "dbeaver-ce" "${DBEAVER_URL}" "false"
 
-if [[ -z "${SUBLIME_STATUS}" ]]; then
-    get_installer "${SUBLIME_URL}" "${SUBLIME_BINARY}"
-    install_deb_package "${SUBLIME_BINARY}"
-fi;
+# executables
+binary "docker-compose" "${DOCKER_COMPOSE_URL}" "${DOCKER_COMPOSE_RELEASE}" "true"
 
-# VSCode
-VSCODE_BINARY="code_1.68.1-1655263094_amd64.deb"
-VSCODE_URL="https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64"
-VSCODE_STATUS=$(deb_package_installed "code")
-
-if [[ -z "${VSCODE_STATUS}" ]]; then
-    get_installer "${VSCODE_URL}" "${VSCODE_BINARY}"
-    install_deb_package "${VSCODE_BINARY}"
-fi;
-
-# DBeaver
-DBEAVER_BINARY="dbeaver-ce_latest_amd64.deb"
-DBEAVER_URL="https://dbeaver.io/files/${DBEAVER_BINARY}"
-DBEAVER_STATUS=$(deb_package_installed "dbeaver-ce")
-
-if [[ -z "${DBEAVER_STATUS}" ]]; then
-    get_installer "${DBEAVER_URL}" "${DBEAVER_BINARY}"
-    install_deb_package "${DBEAVER_BINARY}"
-fi;
-
-# Docker
-DOCKER_STATUS=$(deb_package_installed "docker-ce")
-
-if [[ -z "${DOCKER_STATUS}" ]]; then
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-    apt update && apt install docker-ce
-fi;
-
-# Docker Compose
-DOCKER_COMPOSE_VERSION="v2.7.0"
-DOCKER_COMPOSE_URL="https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)"
-DOCKER_COMPOSE_OUTPUT="/usr/local/bin"
-DOCKER_COMPOSE_STATUS=$(binary_installed "docker-compose")
-
-if [[ -z "${DOCKER_COMPOSE_STATUS}" ]]; then
-    curl -L "${DOCKER_COMPOSE_URL}" -o "${DOCKER_COMPOSE_OUTPUT}/docker-compose"
-    chmod +x "${DOCKER_COMPOSE_OUTPUT}/docker-compose"
-fi;
-
-# Insomnia
-INSOMNIA_BINARY="Insomnia.Core-2022.4.2.deb"
-INSOMNIA_URL="https://updates.insomnia.rest/downloads/ubuntu/latest?&app=com.insomnia.app&source=website"
-INSOMNIA_STATUS=$(deb_package_installed "insomnia")
-
-if [[ -z "${INSOMNIA_STATUS}" ]]; then
-    get_installer "${INSOMNIA_URL}" "${INSOMNIA_BINARY}"
-    install_deb_package "${INSOMNIA_BINARY}"
-fi;
-
-# Mockoon
-MOCKOON_VERSION="1.19.0"
-MOCKOON_BINARY="mockoon-${MOCKOON_VERSION}.deb"
-MOCKOON_URL="https://github.com/mockoon/mockoon/releases/download/v${MOCKOON_VERSION}/${MOCKOON_BINARY}"
-MOCKOON_STATUS=$(deb_package_installed "mockoon")
-
-if [[ -z "${MOCKOON_STATUS}" ]]; then
-    get_installer "${MOCKOON_URL}" "${MOCKOON_BINARY}"
-    install_deb_package "${MOCKOON_BINARY}"
-fi;
+# ppa sources
+custom_ppa "docker-ce" "${DOCKER_GPG_URL}" "${DOCKER_PPA_URL}"
 
 # clean up
-delete_temp_files
+cleanup_installation
