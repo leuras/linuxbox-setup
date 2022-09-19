@@ -1,0 +1,58 @@
+{
+    "packages": {
+        "sublime-text": {
+            "url": "https://www.sublimetext.com/download_thanks?target=x64-deb",
+            "metadata": {
+                "direct-link": false,
+                "release-name": "sublime-text",
+                "type": "DEB"
+            }
+        },
+        "mockoon": {
+            "url": "https://api.github.com/repos/mockoon/mockoon/releases/latest",
+            "metadata": {
+                "direct-link": false,
+                "release-name": "mockoon",
+                "type": "DEB"
+            }
+        },
+        "code": {
+            "url": "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64",
+            "metadata": {
+                "direct-link": true,
+                "release-name": "code",
+                "type": "DEB"
+            }
+        },
+        "insomnia": {
+            "url": "https://updates.insomnia.rest/downloads/ubuntu/latest?&app=com.insomnia.app&source=website",
+            "metadata": {
+                "direct-link": true,
+                "release-name": "insomnia",
+                "type": "DEB"
+            }
+        },
+        "dbeaver-ce": {
+            "url": "https://dbeaver.io/files/dbeaver-ce_latest_amd64.deb",
+            "metadata": {
+                "direct-link": true,
+                "release-name": "dbeaver-ce",
+                "type": "DEB"
+            }
+        },
+        "docker-compose": {
+            "url": "https://api.github.com/repos/docker/compose/releases/latest",
+            "metadata": {
+                "direct-link": false,
+                "release-name": "docker-compose-Linux-x86_64",
+                "type": "BINARY"
+            }
+        }
+    },
+    "custom-ppa-repositories": {
+        "docker": {
+            "gpg-url": "https://download.docker.com/linux/ubuntu/gpg",
+            "ppa-url": "https://download.docker.com/linux/ubuntu"
+        }
+    }
+}
