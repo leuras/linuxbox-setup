@@ -1,4 +1,4 @@
-# Debian packages (.deb) with a download page. 
+# Debian packages (.deb) with a release page
 # ====================================================
 
 # SublimeText
@@ -29,7 +29,7 @@ DOCKER_COMPOSE_RELEASE="docker-compose-$(uname -s)-$(uname -m)"
 # SDKman
 SDKMAN_URL="https://get.sdkman.io"
 
-# Custom PPA package source
+# Custom PPA respository
 # ====================================================
 
 # Docker

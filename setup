@@ -1,56 +1,74 @@
 #!/bin/bash
 
 __BASE_DIR=$(dirname "$0")
+__JSON_PACKAGES=$(cat package.json)
 
 # import functions definition and variables
+. $__BASE_DIR/lib/json.sh
 . $__BASE_DIR/lib/installer.sh
-. $__BASE_DIR/setup-profile
 
-# required debian packages
-# apt update && apt install -y \
-#     wget \
-#     curl \
-#     jq \
-#     zip \
-#     gdebi \
-#     apt-transport-https \
-#     ca-certificates \
-#     software-properties-common \
-#     lsb-release \
-#     vim \
-#     zsh \
-#     fzf \
-#     tilix \
-#     openjdk-11-jdk \
-#     python3 \
-#     python3-pip \
-#     python3-venv \
-#     flameshot
+function main {
 
-apt update && apt install -y \
-    wget \
-    curl \
-    gdebi \
-    lsb-release
+    # install_required_packages
+    
+    for group in $(package_groups); do
+        echo "Working on ${group} ..."
 
-# zsh as default shell
-chsh -s $(which zsh)
+        case "${group}" in 
+            "packages")
+                # install_standalone_packages
+            ;;
+            "custom-ppa-packages")
+                # install_from_custom_ppa_repositories
+            ;;
+        esac
+    done
 
-# .deb installer packages
-deb "sublime-text" "${SUBLIME_URL}" "true"
-deb "mockoon" "${MOCKOON_URL}" "true"
-deb "code" "${VSCODE_URL}" "false"
-deb "insomnia" "${INSOMNIA_URL}" "false"
-deb "dbeaver-ce" "${DBEAVER_URL}" "false"
+    # clean up
+    # cleanup_installation
+}
 
-# executables
-binary "docker-compose" "${DOCKER_COMPOSE_URL}" "${DOCKER_COMPOSE_RELEASE}" "true"
+function install_required_packages {
+    apt update && apt install -y \
+        wget \
+        curl \
+        jq \
+        zip \
+        gdebi \
+        apt-transport-https \
+        ca-certificates \
+        software-properties-common \
+        lsb-release \
+        vim \
+        zsh \
+        fzf \
+        tilix \
+        openjdk-11-jdk \
+        python3 \
+        python3-pip \
+        python3-venv \
+        flameshot
+}
 
-# installation scripts
-shell_script "sdk" "${SDKMAN_URL}" 
+function package_groups {
+    local groups_array=$(json_keys "${__JSON_PACKAGES}")
+    
+    echo "$(json_array_to_string_list "${groups_array}")"
+}
 
-# ppa sources
-# custom_ppa "docker-ce" "${DOCKER_GPG_URL}" "${DOCKER_PPA_URL}"
+function install_standalone_packages {
+    local packages_array=$(json_keys "${__JSON_PACKAGES}" ".packages")
+    local packages=$(json_array_to_string_list "${packages_array}")
 
-# clean up
-cleanup_installation
+    for package in $packages; do
+        local properties=$(json_value "${__JSON_PACKAGES}" ".packages.${package}")
+
+        echo "Installing package ${package} ..."
+        install_package "${package}" "${properties}"
+
+        echo "Done"
+        echo ""
+    done
+}
+
+main

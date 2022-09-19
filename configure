@@ -1,5 +1,8 @@
 #!/bin/zsh
 
+# zsh as default shell
+chsh -s $(which zsh)
+
 # oh-my-zsh
 ZSH=${ZSH:-"${HOME}/.oh-my-zsh"}
 ZSH_CUSTOM=${ZSH_CUSTOM:-"${ZSH}/custom"}
@@ -81,5 +84,5 @@ if [[ ! -f  "${LOCAL_BIN_PATH}/git-prune" ]]; then
     mkdir -p "${LOCAL_BIN_PATH}"
 
     echo "[+] Copying git-prune script to ${LOCAL_BIN_PATH}"
-    cp git-prune "${LOCAL_BIN_PATH}" && chmod +x "${LOCAL_BIN_PATH}/git-prune"
+    cp scripts/git-prune "${LOCAL_BIN_PATH}" && chmod +x "${LOCAL_BIN_PATH}/git-prune"
 fi;

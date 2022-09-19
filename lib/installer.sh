@@ -1,92 +1,103 @@
 #!/bin/bash
 
+# private variables
 readonly __LINUXBOX_SETUP_DIR="/tmp/linuxbox-setup-$(cat /proc/sys/kernel/random/uuid)"
 
-deb () {
+function install_package {
     local package="$1"
-    local url="$2"
-    local use_crawler="${3}"
+    local properties="$2"
 
-    local binary="${package}.deb"
-    local installation_status=$(__is_deb_package_installed "${package}")
+    local status=$(__is_installed "${package}")
 
-    if [[ -z "${installation_status}" ]]; then
+    if [[ -z "${status}" ]]; then
 
-        if [[ "${use_crawler}" == "true" ]]; then
-            url=$(__download_link_crawler "${package}" "${url}")
-        fi
+        local url=$(json_value "$properties" ".url")
+        local metadata="$(json_value "${properties}" ".metadata")"
+        local resolved_url=$(__resolve_url "${package}" "${url}" "${metadata}")
 
-        __download_package "${url}" "${binary}"
-        __install_deb "${binary}"
+        local package_type=$(json_value "${metadata}" ".type")
+        local extension=$(__package_extension "${package_type}")
+        
+        [[ -z "${extension}" ]] && local binary="${package}" || local binary="${package}.${extension}"
+
+        __get_package "${resolved_url}" "${binary}"
+
+        case "${package_type}" in 
+            "DEB")
+                __install_deb "$binary"
+            ;;
+            "BINARY")
+                __install_binary "${binary}"
+            ;;
+        esac
+    else
+        echo "Package ${package} is already installed."
     fi
 }
 
-binary () {
-    local package="$1"
-    local url="$2"
-    local release="${3}"
-    local use_crawler="${4}"
-
-    local installation_status=$(__is_binary_installed "${package}")
-
-    if [[ -z "${installation_status}" ]]; then
-
-        if [[ "${use_crawler}" == "true" ]]; then
-            url=$(__download_link_crawler "${release}" "${url}" "" "")
-        fi
-
-        __download_package "${url}" "${package}"
-        __install_binary "${package}"
-    fi
-}
-
-shell_script () {
-    local package="$1"
-    local url="$2"
-
-    local binary="${package}.sh"
-    local installation_status=$(__is_binary_installed "${package}")
-
-    if [[ -z "${installation_status}" ]]; then
-
-        __download_package "${url}" "${binary}"
-        __install_shell_script "${binary}"
-    fi
-}
-
-custom_ppa () {
-    local package="$1"
-    local gpg_url="$2"
-    local ppa_url="$3"
-
-    local installation_status=$(__is_deb_package_installed "${package}")
-
-    if [[ -z "${installation_status}" ]]; then
-        curl -fsSL "${gpg_url}" | apt-key add -
-        add-apt-repository "deb [arch=amd64] ${ppa_url} $(lsb_release -cs) stable"
-        apt update && apt install "${package}"
-    fi
-}
-
-cleanup_installation () {
+function cleanup_installation {
     rm -rf "${__LINUXBOX_SETUP_DIR}"
 }
 
-__download_package() {
+function __is_installed {
+    local binary="$1"
+
+    echo "$(command -v ${binary} 2> /dev/null)"
+}
+
+function __resolve_url {
+    local package="$1"
+    local url="$2"
+    local metadata="$3" 
+
+    local direct_link=$(json_value "${metadata}" ".direct-link")
+    
+    if [[ "${direct_link}" == "false" ]]; then
+        echo "$(__latest_release "${url}" "${metadata}")"
+    else
+        echo "${url}"
+    fi
+}
+
+function __latest_release {
+    local url="$1"
+    local metadata="$2"
+
+    local release=$(json_value "${metadata}" ".release-name")
+    local package_type=$(json_value "${metadata}" ".type")
+    local extension=$(__package_extension "${package_type}")
+
+    echo "$(curl -sL "${url}" | grep -Eio "(https?:\/{2}[a-z0-9\._?=\/-]+${release}[a-z0-9_\.-]*\.?${extension})" | uniq | head -n 1)"    
+}
+
+function __package_extension {
+    local package_type="$1"
+
+    case "${package_type}" in
+        "DEB")
+            echo "deb"
+        ;;
+        *) 
+            echo ""
+        ;;
+    esac
+}
+
+function __get_package {
     local url="$1"
     local binary="$2"
-
+    
     mkdir -p "${__LINUXBOX_SETUP_DIR}"
     wget -v -O "${__LINUXBOX_SETUP_DIR}/${binary}" "${url}"
 }
 
-__install_deb () {
+function __install_deb {
     local binary="$1"
 
-    gdebi "${__LINUXBOX_SETUP_DIR}/${binary}"
+    gdebi -n "${__LINUXBOX_SETUP_DIR}/${binary}"
 }
 
-__install_binary () {
+function __install_binary {
     local package="$1"
 
     local binary="${__LINUXBOX_SETUP_DIR}/${package}"
@@ -106,31 +117,4 @@ __install_binary () {
             tar -xvzf "${binary}" -C "${installation_path}"
             ;;
     esac
-}
-
-__install_shell_script () {
-    local binary="${__LINUXBOX_SETUP_DIR}/${1}"
-
-    chmod +x "${binary}" && cat "${binary}" | bash
-}
-
-__is_deb_package_installed () {
-    local package="$1"
-
-    echo "$(dpkg-query -W -f='${Status}' ${package} 2> /dev/null)"
-}
-
-__is_binary_installed () {
-    local binary="$1"
-
-    echo "$(command -v ${binary} 2> /dev/null)"
-}
-
-__download_link_crawler () {
-    local package="$1"
-    local url="$2"
-    local extension="${3:-deb}"
-    local platform="${4:-amd64}"
-
-    echo "$(curl -sL "${url}" | grep -Eio "(https?:\/{2}[a-z0-9\._?=\/-]+${package}[a-z0-9_-]+\.?${extension})" | grep -Ei "${platform}" | uniq)"
 }
