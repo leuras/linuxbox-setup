@@ -52,7 +52,9 @@
     "custom-ppa-repositories": {
         "docker": {
             "gpg-url": "https://download.docker.com/linux/ubuntu/gpg",
-            "ppa-url": "https://download.docker.com/linux/ubuntu"
+            "ppa-url": "https://download.docker.com/linux/ubuntu",
+            "distribution": "focal",
+            "categories": ["stable"]
         }
     }
 }

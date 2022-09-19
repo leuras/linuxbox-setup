@@ -9,7 +9,7 @@ __JSON_PACKAGES=$(cat package.json)
 
 function main {
 
-    # install_required_packages
+    install_required_packages
     
     for group in $(package_groups); do
         echo "Working on ${group} ..."
@@ -18,14 +18,14 @@ function main {
             "packages")
                 # install_standalone_packages
             ;;
-            "custom-ppa-packages")
-                # install_from_custom_ppa_repositories
+            "custom-ppa-repositories")
+                install_from_custom_ppa_repositories
             ;;
         esac
     done
 
     # clean up
-    # cleanup_installation
+    cleanup_installation
 }
 
 function install_required_packages {
@@ -69,6 +69,21 @@ function install_standalone_packages {
         echo "Done"
         echo ""
     done
+}
+
+function install_from_custom_ppa_repositories {
+    local packages_array=$(json_keys "${__JSON_PACKAGES}" ".custom-ppa-repositories")
+    local packages=$(json_array_to_string_list "${packages_array}")
+
+    for package in $packages; do
+        local properties=$(json_value "${__JSON_PACKAGES}" ".custom-ppa-repositories.${package}")
+
+        echo "Adding PPA repository for ${package} ..."
+        add_custom_ppa "${package}" "${properties}"
+        echo ""
+    done
+
+    apt update && apt install -y $packages
 }
 
 main

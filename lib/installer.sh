@@ -2,6 +2,7 @@
 
 # private variables
 readonly __LINUXBOX_SETUP_DIR="/tmp/linuxbox-setup-$(cat /proc/sys/kernel/random/uuid)"
+readonly __APT_KEYRING_DIR="/etc/apt/keyrings"
 
 function install_package {
     local package="$1"
@@ -32,6 +33,29 @@ function install_package {
         esac
     else
         echo "Package ${package} is already installed."
+    fi
+}
+
+function add_custom_ppa {
+    local package="$1"
+    local properties="$2"
+
+    local status=$(__is_installed "${package}")
+
+    if [[ -z "${status}" ]]; then
+
+        local gpg_url=$(json_value "${properties}" ".gpg-url")
+        local ppa_url=$(json_value "${properties}" ".ppa-url")
+        local distribution=$(json_value "${properties}" ".distribution")
+        local categories_array=$(json_value "${properties}" ".categories")
+        local categories=$(json_array_to_string_list "${categories_array}")
+
+        local keyring_file="${__APT_KEYRING_DIR}/${package}.gpg"
+        local content="deb [arch=$(dpkg --print-architecture) signed-by=${keyring_file}] ${ppa_url} ${distribution} ${categories}"
+        
+        mkdir -p "${__APT_KEYRING_DIR}"
+        curl -fsSL "${gpg_url}" | gpg --dearmor -o "${keyring_file}"
+        echo "${content}" | tee "/etc/apt/sources.list.d/${package}.list" > /dev/null
     fi
 }
 
