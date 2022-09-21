@@ -1,14 +1,15 @@
 #!/bin/bash
 
 # private variables
+readonly __KEYRING_DIR="/etc/apt/keyrings"
 readonly __LINUXBOX_SETUP_DIR="/tmp/linuxbox-setup-$(cat /proc/sys/kernel/random/uuid)"
-readonly __APT_KEYRING_DIR="/etc/apt/keyrings"
 
 function install_package {
     local package="$1"
     local properties="$2"
 
-    local status=$(__is_installed "${package}")
+    local executable=$(json_value "$properties" ".executable")
+    local status=$(is_installed "${executable}")
 
     if [[ -z "${status}" ]]; then
 
@@ -32,7 +33,7 @@ function install_package {
             ;;
         esac
     else
-        echo "Package ${package} is already installed."
+        console::log "Package ${package} is already installed."
     fi
 }
 
@@ -40,7 +41,8 @@ function add_custom_ppa {
     local package="$1"
     local properties="$2"
 
-    local status=$(__is_installed "${package}")
+    local executable=$(json_value "$properties" ".executable")
+    local status=$(is_installed "${executable}")
 
     if [[ -z "${status}" ]]; then
 
@@ -50,23 +52,25 @@ function add_custom_ppa {
         local categories_array=$(json_value "${properties}" ".categories")
         local categories=$(json_array_to_string_list "${categories_array}")
 
-        local keyring_file="${__APT_KEYRING_DIR}/${package}.gpg"
+        local keyring_file="${__KEYRING_DIR}/${package}.gpg"
         local content="deb [arch=$(dpkg --print-architecture) signed-by=${keyring_file}] ${ppa_url} ${distribution} ${categories}"
         
-        mkdir -p "${__APT_KEYRING_DIR}"
+        mkdir -p "${__KEYRING_DIR}"
         curl -fsSL "${gpg_url}" | gpg --dearmor -o "${keyring_file}"
         echo "${content}" | tee "/etc/apt/sources.list.d/${package}.list" > /dev/null
+    else
+        console::log "Package ${package} is already installed."
     fi
+}
+
+function is_installed {
+    local binary="$1"
+
+    echo "$(command -v ${binary} 2> /dev/null)"
 }
 
 function cleanup_installation {
     rm -rf "${__LINUXBOX_SETUP_DIR}"
-}
-
-function __is_installed {
-    local binary="$1"
-
-    echo "$(command -v ${binary} 2> /dev/null)"
 }
 
 function __resolve_url {

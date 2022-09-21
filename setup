@@ -5,6 +5,8 @@ __JSON_PACKAGES=$(cat package.json)
 
 # import functions definition and variables
 . $__BASE_DIR/lib/json.sh
+. $__BASE_DIR/lib/colors.sh
+. $__BASE_DIR/lib/console.sh
 . $__BASE_DIR/lib/installer.sh
 
 function main {
@@ -12,11 +14,12 @@ function main {
     install_required_packages
     
     for group in $(package_groups); do
-        echo "Working on ${group} ..."
+
+        console::title "Working on ${group}"
 
         case "${group}" in 
             "packages")
-                # install_standalone_packages
+                install_standalone_packages
             ;;
             "custom-ppa-repositories")
                 install_from_custom_ppa_repositories
@@ -24,11 +27,16 @@ function main {
         esac
     done
 
+    show_installation_report
+
     # clean up
     cleanup_installation
 }
 
 function install_required_packages {
+
+    console::title "Installing core packages from the oficial PPA respository"
+
     apt update && apt install -y \
         wget \
         curl \
@@ -48,6 +56,8 @@ function install_required_packages {
         python3-pip \
         python3-venv \
         flameshot
+
+        console::log "Done"
 }
 
 function package_groups {
@@ -63,12 +73,13 @@ function install_standalone_packages {
     for package in $packages; do
         local properties=$(json_value "${__JSON_PACKAGES}" ".packages.${package}")
 
-        echo "Installing package ${package} ..."
+        console::info "Installing ${package}"
         install_package "${package}" "${properties}"
 
-        echo "Done"
-        echo ""
+        console::break_line
     done
+
+    console::log "Done"
 }
 
 function install_from_custom_ppa_repositories {
@@ -78,12 +89,40 @@ function install_from_custom_ppa_repositories {
     for package in $packages; do
         local properties=$(json_value "${__JSON_PACKAGES}" ".custom-ppa-repositories.${package}")
 
-        echo "Adding PPA repository for ${package} ..."
+        console::notice "Adding PPA repository for ${package}"
         add_custom_ppa "${package}" "${properties}"
-        echo ""
     done
 
+    console::break_line
+
+    console::info "Installing/Upgrading packages: ${packages}"
     apt update && apt install -y $packages
+
+    console::log "Done"
+}
+
+function show_installation_report {
+    local json_object=$(echo "${__JSON_PACKAGES}" | jq '.packages + ."custom-ppa-repositories" | to_entries | map({(.key|tostring): .value.executable}) | add')
+    
+    local packages_array=$(json_keys "${json_object}")
+    local packages=$(json_array_to_string_list "${packages_array}")
+
+    console::header "Packages Installation Report"
+
+    for package in $packages; do
+
+        local executable=$(json_value "$json_object" ".${package}")
+        local status=$(is_installed "${executable}")
+
+        [[ -z "${status}" ]] && status="Not Installed" || status="Installed"
+        status="\e[${FG_COLOR_DARK_GRAY}m${status}"
+
+        local message=$(console::pad_end "${package} " "." "35")
+
+        console::info "${message} ${status}"
+    done
+
+    console::break_line
 }
 
 main

@@ -25,3 +25,10 @@ function json_array_to_string_list {
 
     echo "$(echo "${json}" | jq -rc '.[]' 2> /dev/null)" 
 }
+
+function json_search {
+    local json="$1"
+    local key="$(json_path_normalizer "$2")"
+
+    echo "$(jq '..|.'${key}'? | select(. != null)')"
+}
