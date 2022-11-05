@@ -3,6 +3,7 @@
 # private variables
 readonly __KEYRING_DIR="/etc/apt/keyrings"
 readonly __LINUXBOX_SETUP_DIR="/tmp/linuxbox-setup-$(cat /proc/sys/kernel/random/uuid)"
+readonly __SUDO=$(which sudo)
 
 function install_package {
     local package="$1"
@@ -55,12 +56,18 @@ function add_custom_ppa {
         local keyring_file="${__KEYRING_DIR}/${package}.gpg"
         local content="deb [arch=$(dpkg --print-architecture) signed-by=${keyring_file}] ${ppa_url} ${distribution} ${categories}"
         
-        mkdir -p "${__KEYRING_DIR}"
-        curl -fsSL "${gpg_url}" | gpg --dearmor -o "${keyring_file}"
-        echo "${content}" | tee "/etc/apt/sources.list.d/${package}.list" > /dev/null
+        $__SUDO mkdir -p "${__KEYRING_DIR}"
+        curl -fsSL "${gpg_url}" | $__SUDO gpg --dearmor -o "${keyring_file}"
+        echo "${content}" | $__SUDO tee "/etc/apt/sources.list.d/${package}.list" > /dev/null
     else
         console::log "Package ${package} is already installed."
     fi
+}
+
+function apt_install {
+    local packages=("$@")
+    
+    $__SUDO apt update && $__SUDO apt install -y "${packages[@]}"
 }
 
 function is_installed {
@@ -122,7 +129,7 @@ function __get_package {
 function __install_deb {
     local binary="$1"
 
-    gdebi -n "${__LINUXBOX_SETUP_DIR}/${binary}"
+    $__SUDO gdebi -n "${__LINUXBOX_SETUP_DIR}/${binary}"
 }
 
 function __install_binary {
@@ -135,14 +142,14 @@ function __install_binary {
         "ELF 64-bit LSB executable")
             local installation_path="/usr/local/bin/${package}"
 
-            cp "${binary}" "${installation_path}"
-            chmod +x "${installation_path}"
+            $__SUDO cp "${binary}" "${installation_path}"
+            $__SUDO chmod +x "${installation_path}"
             ;;
         "gzip compressed data")
             local installation_path="/opt/${package}"
 
-            mkdir -p "${installation_path}"
-            tar -xvzf "${binary}" -C "${installation_path}"
+            $__SUDO mkdir -p "${installation_path}"
+            $__SUDO tar -xvzf "${binary}" -C "${installation_path}"
             ;;
     esac
 }
