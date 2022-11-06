@@ -1,29 +1,22 @@
 #!/bin/bash
 
-# private variables
 readonly __KEYRING_DIR="/etc/apt/keyrings"
 readonly __LINUXBOX_SETUP_DIR="/tmp/linuxbox-setup-$(cat /proc/sys/kernel/random/uuid)"
 readonly __SUDO=$(which sudo)
 
 function install_package {
-    local package="$1"
-    local properties="$2"
+    declare -A package=$(packages::get "$1")
 
-    local executable=$(json_value "$properties" ".executable")
-    local status=$(is_installed "${executable}")
+    local status=$(is_installed "${package[executable]}")
 
     if [[ -z "${status}" ]]; then
 
-        local url=$(json_value "$properties" ".url")
-        local metadata="$(json_value "${properties}" ".metadata")"
-        local resolved_url=$(__resolve_url "${package}" "${url}" "${metadata}")
-
-        local package_type=$(json_value "${metadata}" ".type")
-        local extension=$(__package_extension "${package_type}")
+        local url=$(packages::url "${package[@]}")
+        local extension=$(packages::extension "${package[type]}")
         
-        [[ -z "${extension}" ]] && local binary="${package}" || local binary="${package}.${extension}"
+        [[ -z "${extension}" ]] && local binary="${package[name]}" || local binary="${package[name]}.${extension}"
 
-        __get_package "${resolved_url}" "${binary}"
+        __get_package "${url}" "${binary}"
 
         case "${package_type}" in 
             "DEB")
@@ -34,7 +27,7 @@ function install_package {
             ;;
         esac
     else
-        console::log "Package ${package} is already installed."
+        console::log "Package ${package[name]} is already installed."
     fi
 }
 
@@ -78,44 +71,6 @@ function is_installed {
 
 function cleanup_installation {
     rm -rf "${__LINUXBOX_SETUP_DIR}"
-}
-
-function __resolve_url {
-    local package="$1"
-    local url="$2"
-    local metadata="$3" 
-
-    local direct_link=$(json_value "${metadata}" ".direct-link")
-    
-    if [[ "${direct_link}" == "false" ]]; then
-        echo "$(__latest_release "${url}" "${metadata}")"
-    else
-        echo "${url}"
-    fi
-}
-
-function __latest_release {
-    local url="$1"
-    local metadata="$2"
-
-    local release=$(json_value "${metadata}" ".release-name")
-    local package_type=$(json_value "${metadata}" ".type")
-    local extension=$(__package_extension "${package_type}")
-
-    echo "$(curl -sL "${url}" | grep -Eio "(https?:\/{2}[a-z0-9\._?=\/-]+${release}[a-z0-9_\.-]*\.?${extension})" | uniq | head -n 1)"    
-}
-
-function __package_extension {
-    local package_type="$1"
-
-    case "${package_type}" in
-        "DEB")
-            echo "deb"
-        ;;
-        *) 
-            echo ""
-        ;;
-    esac
 }
 
 function __get_package {
