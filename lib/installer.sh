@@ -1,29 +1,33 @@
 #!/bin/bash
 
 readonly __KEYRING_DIR="/etc/apt/keyrings"
-readonly __LINUXBOX_SETUP_DIR="/tmp/linuxbox-setup-$(cat /proc/sys/kernel/random/uuid)"
+readonly __SETUP_DIR="/tmp/linuxbox-setup-$(cat /proc/sys/kernel/random/uuid)"
 readonly __SUDO=$(which sudo)
 
-function install_package {
-    declare -A package=$(packages::get "$1")
+function installer::install_from_apt {
+    local packages=("$@")
+    
+    $__SUDO apt update && $__SUDO apt install -y "${packages[@]}"
+}
 
-    local status=$(is_installed "${package[executable]}")
+function installer::install_from_archive {
+    declare -A package=$(packages::get "${1}")
 
-    if [[ -z "${status}" ]]; then
+    if [[ ! $(installer::already_installed "${package[executable]}") ]]; then
 
         local url=$(packages::url "${package[@]}")
         local extension=$(packages::extension "${package[type]}")
         
         [[ -z "${extension}" ]] && local binary="${package[name]}" || local binary="${package[name]}.${extension}"
 
-        __get_package "${url}" "${binary}"
+        installer::download_package "${url}" "${binary}"
 
         case "${package_type}" in 
             "DEB")
-                __install_deb "$binary"
+                installer::install_from_deb "$binary"
             ;;
             "BINARY")
-                __install_binary "${binary}"
+                installer::install_from_binary "${binary}"
             ;;
         esac
     else
@@ -31,67 +35,48 @@ function install_package {
     fi
 }
 
-function add_custom_ppa {
-    local package="$1"
-    local properties="$2"
+function installer::add_custom_ppa {
+    declare -A package=$(packages::get_ppa "${1}")
 
-    local executable=$(json_value "$properties" ".executable")
-    local status=$(is_installed "${executable}")
+    if [[ ! $(installer::already_installed "${package[executable]}") ]]; then
 
-    if [[ -z "${status}" ]]; then
-
-        local gpg_url=$(json_value "${properties}" ".gpg-url")
-        local ppa_url=$(json_value "${properties}" ".ppa-url")
-        local distribution=$(json_value "${properties}" ".distribution")
-        local categories_array=$(json_value "${properties}" ".categories")
-        local categories=$(json_array_to_string_list "${categories_array}")
-
-        local keyring_file="${__KEYRING_DIR}/${package}.gpg"
-        local content="deb [arch=$(dpkg --print-architecture) signed-by=${keyring_file}] ${ppa_url} ${distribution} ${categories}"
+        local keyring_file="${__KEYRING_DIR}/${package[name]}.gpg"
+        local content="deb [arch=$(dpkg --print-architecture) signed-by=${keyring_file}] ${package[ppa-url]} ${package[distribution]} ${package[categories]}"
         
         $__SUDO mkdir -p "${__KEYRING_DIR}"
-        curl -fsSL "${gpg_url}" | $__SUDO gpg --dearmor -o "${keyring_file}"
+
+        curl -fsSL "${package[gpg-url]}" | $__SUDO gpg --dearmor -o "${keyring_file}"
         echo "${content}" | $__SUDO tee "/etc/apt/sources.list.d/${package}.list" > /dev/null
     else
-        console::log "Package ${package} is already installed."
+        console::log "Package ${package[name]} is already installed."
     fi
 }
 
-function apt_install {
-    local packages=("$@")
-    
-    $__SUDO apt update && $__SUDO apt install -y "${packages[@]}"
-}
-
-function is_installed {
-    local binary="$1"
+function installer::already_installed {
+    local binary="${1}"
 
     echo "$(command -v ${binary} 2> /dev/null)"
 }
 
-function cleanup_installation {
-    rm -rf "${__LINUXBOX_SETUP_DIR}"
-}
-
-function __get_package {
-    local url="$1"
-    local binary="$2"
+function installer::download_package {
+    local url="${1}"
+    local binary="${2}"
     
-    mkdir -p "${__LINUXBOX_SETUP_DIR}"
-    wget -v -O "${__LINUXBOX_SETUP_DIR}/${binary}" "${url}"
+    mkdir -p "${__SETUP_DIR}"
+    wget -v -O "${__SETUP_DIR}/${binary}" "${url}"
 }
 
-function __install_deb {
-    local binary="$1"
+function installer::install_from_deb {
+    local binary="${1}"
 
-    $__SUDO gdebi -n "${__LINUXBOX_SETUP_DIR}/${binary}"
+    $__SUDO gdebi -n "${__SETUP_DIR}/${binary}"
 }
 
-function __install_binary {
-    local package="$1"
+function installer::install_from_binary {
+    local package="${1}"
 
-    local binary="${__LINUXBOX_SETUP_DIR}/${package}"
-    local file_info=$(file -b "${binary}" | awk -F "," '{print $1}')
+    local binary="${__SETUP_DIR}/${package}"
+    local file_info=$(file -b "${binary}" | awk -F "," '{print ${1}}')
 
     case "${file_info}" in
         "ELF 64-bit LSB executable")
@@ -107,4 +92,8 @@ function __install_binary {
             $__SUDO tar -xvzf "${binary}" -C "${installation_path}"
             ;;
     esac
+}
+
+function installer::cleanup {
+    rm -rf "${__SETUP_DIR}"
 }
