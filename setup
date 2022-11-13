@@ -4,7 +4,6 @@ __BASE_DIR=$(dirname "${0}")
 __JSON_PACKAGES=$(cat package.json)
 
 # import functions definition and variables
-. $__BASE_DIR/lib/json.sh
 . $__BASE_DIR/lib/colors.sh
 . $__BASE_DIR/lib/console.sh
 . $__BASE_DIR/lib/packages.sh
@@ -12,7 +11,7 @@ __JSON_PACKAGES=$(cat package.json)
 
 function main {
 
-    install_required_packages
+    install_core_packages
     
     for group in $(packages::groups); do
 
@@ -20,19 +19,19 @@ function main {
 
         case "${group}" in 
             "packages")
-                install_standalone_packages
+                install_packages
             ;;
             "custom-ppa-repositories")
-                install_from_custom_ppa_repositories
+                install_from_custom_ppa
             ;;
         esac
     done
 
-    show_installation_report
+    report
     installer::cleanup
 }
 
-function install_required_packages {
+function install_core_packages {
     packages=(
         wget
         curl 
@@ -53,8 +52,8 @@ function install_required_packages {
     console::log "Done"
 }
 
-function install_standalone_packages {
-    local packages=$(packages::list ".packages")
+function install_packages {
+    local packages=$(packages::list "packages")
 
     for package in $packages; do
         console::info "Installing ${package}"
@@ -65,8 +64,8 @@ function install_standalone_packages {
     console::log "Done"
 }
 
-function install_from_custom_ppa_repositories {
-    local packages=$(packages::list ".custom-ppa-repositories")
+function install_from_custom_ppa {
+    local packages=$(packages::list "custom-ppa-repositories")
 
     for package in $packages; do
         console::notice "Adding PPA repository for ${package}"
@@ -81,27 +80,19 @@ function install_from_custom_ppa_repositories {
     console::log "Done"
 }
 
-function show_installation_report {
-    local json_object=$(echo "${__JSON_PACKAGES}" | jq '.packages + ."custom-ppa-repositories" | to_entries | map({(.key|tostring): .value.executable}) | add')
-    
-    local packages_array=$(json_keys "${json_object}")
-    local packages=$(json_array_to_string_list "${packages_array}")
-
-    local packages=$
+function report {
+    local result=$(packages::find_executables)
 
     console::header "Packages Installation Report"
 
-    for package in $packages; do
-
-        local executable=$(json_value "$json_object" ".${package}")
-        local status=$(is_installed "${executable}")
-
-        [[ -z "${status}" ]] && status="Not Installed" || status="Installed"
-        status="\e[${FG_COLOR_DARK_GRAY}m${status}"
+    for entry in $result; do
+        local package=$(echo "${entry}" | awk -F "," '{print $1}')
+        local executable=$(echo "${entry}" | awk -F "," '{print $2}')
+        
+        [[ $(installer::already_installed "${executable}") ]] && local status="Installed" || local status="Not Installed"
 
         local message=$(console::pad_end "${package} " "." "35")
-
-        console::info "${message} ${status}"
+        console::info "${message} \e[${FG_COLOR_DARK_GRAY}m${status}"
     done
 
     console::break_line
