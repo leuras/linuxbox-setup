@@ -10,8 +10,6 @@ __JSON_PACKAGES=$(cat package.json)
 . $__BASE_DIR/lib/installer.sh
 
 function main {
-
-    install_core_packages
     
     for group in $(packages::groups); do
 
@@ -31,27 +29,6 @@ function main {
     installer::cleanup
 }
 
-function install_core_packages {
-    packages=(
-        wget
-        curl 
-        jq 
-        zip 
-        gdebi 
-        apt-transport-https 
-        ca-certificates 
-        software-properties-common 
-        lsb-release 
-        vim 
-        zsh 
-    )
-
-    console::title "Installing core packages from the oficial PPA respository"
-    installer::install_from_apt "${packages[@]}"
-    
-    console::log "Done"
-}
-
 function install_packages {
     local packages=$(packages::list "packages")
 
@@ -68,7 +45,7 @@ function install_from_custom_ppa {
     local packages=$(packages::list "custom-ppa-repositories")
 
     for package in $packages; do
-        console::notice "Adding PPA repository for ${package}"
+        console::notice "Adding the custom PPA repository for ${package}"
         installer::add_custom_ppa "${package}"
     done
 

@@ -5,7 +5,7 @@ readonly __RAW_JSON__=$(cat package.json)
 function packages::get {
     local package="${1}"
 
-    # 1. filters the given package object
+    # 1. filters by the given package object
     # 2. combines the `URL` and `executable` properties with all properties of `metadata` into a single object
     # 3. converts the merged object into a key/value pair
     # 4. transform each entry into a string like: `[key]="value"`
@@ -16,7 +16,7 @@ function packages::get {
 function packages::get_ppa {
     local package="${1}"
 
-    # 1. filters the given package object
+    # 1. filters by the given package object
     # 2. transforms the `categories` property from an array into a string
     # 3. converts the object into a key/value pair
     # 4. transform each entry into a string like: `[key]="value"`
@@ -24,10 +24,14 @@ function packages::get_ppa {
     echo "${__RAW_JSON__}" | jq -r '."custom-ppa-repositories"."'${package}'" | { name: "'${package}'" } + . + { categories: .categories | join(" ") } | to_entries | map("[\(.key)]=\"\(.value)\"") | "(\(join(" ")))"'
 }
 
+function packages::system_requirements {
+    echo "${__RAW_JSON__}" | jq -rc '."system-requirements" | join(" ")'
+}
+
 function packages::list {
     local group="${1}"
 
-    # 1. filters the given group package
+    # 1. filters by the given group package
     # 2. extracts all the keys (property names) of the given group
     # 3. returns the array keys as a string (-c instructs jq to compact the output)
     echo "${__RAW_JSON__}" | jq -rc '."'${group}'" | keys | .[]'

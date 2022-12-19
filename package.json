@@ -1,5 +1,29 @@
 {
-    "packages": {
+    "system-requirements": [
+        "wget",
+        "curl",
+        "jq",
+        "zip",
+        "gdebi",
+        "apt-transport-https",
+        "ca-certificates",
+        "software-properties-common",
+        "lsb-release",
+        "vim",
+        "zsh"
+    ],
+    "ppa-packages": {
+        "fzf": {
+            "executable": "fzf"
+        },
+        "tilix": {
+            "executable": "tilix"
+        },
+        "flameshot": {
+            "executable": "flameshot"
+        }
+    },
+    "binary-packages": {
         "sublime-text": {
             "url": "https://www.sublimetext.com/download_thanks?target=x64-deb",
             "executable": "subl",
@@ -60,7 +84,9 @@
             "gpg-url": "https://download.docker.com/linux/ubuntu/gpg",
             "ppa-url": "https://download.docker.com/linux/ubuntu",
             "distribution": "focal",
-            "categories": ["stable"],
+            "categories": [
+                "stable"
+            ],
             "executable": "docker"
         }
     }

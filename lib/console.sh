@@ -1,60 +1,35 @@
 #!/bin/bash
 
-function console::header {
-    local message="$1"
+# color scheme
+__ACCENT__="\e[${FG_COLOR_LIGHT_YELLOW};${BOLD}m"
+__NORMAL__="\e[${FG_COLOR_LIGHT_GRAY};${NORMAL}m"
 
-    local frame_style="\e[${FG_COLOR_CYAN};${BOLD}m"
-    local title_style="\e[${FG_COLOR_LIGHT_GREEN}m"
-    local reset_style="\e[${FG_COLOR_DEFAULT};${NORMAL}m"
-
-    local title="${title_style}${message}${frame_style}"
-
-    echo -e "${frame_style}"
-    echo -e "==============================( $title )=============================="
-    echo -e "${reset_style}"
-}
-
-function console::title {
-    local message="$1"
-
-    echo -e "\n\e[${FG_COLOR_LIGHT_YELLOW};${BOLD}m[*] \e[${FG_COLOR_LIGHT_GREEN}m${message}\e[${FG_COLOR_DEFAULT};${NORMAL}m"
-}
+__SUCCESS__="\e[${FG_COLOR_LIGHT_GREEN};${BOLD}m"
+__FAILURE__="\e[${FG_COLOR_RED};${BOLD}m"
 
 function console::info {
-    local message="$1"
+    local message=$(console::highlight "$1")
 
-    echo -e "\e[${FG_COLOR_CYAN};${BOLD}m[i] \e[${FG_COLOR_LIGHT_YELLOW}m${message}\e[${FG_COLOR_DEFAULT};${NORMAL}m"
+    echo -e "${__NORMAL__}${message}${__NORMAL__}"
 }
 
-function console::notice {
-    local message="$1"
+function console::success {
+    local message=$(console::highlight "$1")
 
-    echo -e "\e[${FG_COLOR_LIGHT_MAGENTA};${BOLD}m[!] \e[${FG_COLOR_LIGHT_YELLOW}m${message}\e[${FG_COLOR_DEFAULT};${NORMAL}m"
+    echo -e "${__NORMAL__}${message} ${__SUCCESS__}\u2714${__NORMAL__}"
 }
 
-function console::log {
-    local message="$1"
+function console::error {
+    local message=$(console::highlight "$1")
 
-    echo -e "\e[${FG_COLOR_DARK_GRAY}m${message}\e[${FG_COLOR_DEFAULT};${NORMAL}m"
+    echo -e "${__NORMAL__}${message} ${__FAILURE__}\u2718${__NORMAL__}"
 }
 
-function console::break_line {
+function console::highlight {
+    # Looks for the highlight pattern of elements within a given string
+    echo "$(echo "$1" | sed -E 's/\^([a-zA-Z \._-]+)\^/'"\\${__ACCENT__}"'\1'"\\${__NORMAL__}"'/g')"
+}
+
+function console::linebreak {
     echo ""
-}
-
-function console::pad_end {
-    local value="$1"
-    local char="$2"
-    local length="$3"
-
-    local chars=$(echo "${value}" | wc -c)
-    local limit=$(($length - $chars))
-
-    local new_value="${value}"
-
-    for i in $(seq 1 $limit); do
-        new_value="${new_value}${char}"
-    done
-
-    echo "${new_value}"
 }

@@ -5,6 +5,7 @@ readonly __SETUP_DIR__="/tmp/linuxbox-setup-$(cat /proc/sys/kernel/random/uuid)"
 readonly __SUDO__=$(which sudo)
 
 function installer::install_from_apt {
+    # converts a string list in an array of strings
     local packages=("$@")
     
     $__SUDO__ apt update && $__SUDO__ apt install -y "${packages[@]}"
@@ -55,7 +56,7 @@ function installer::add_custom_ppa {
 function installer::already_installed {
     local binary="${1}"
 
-    echo "$(command -v ${binary} 2> /dev/null)"
+    echo "$(command -v ${binary} 2> /dev/null || dpkg-query -W ${binary})"
 }
 
 function installer::download_package {
