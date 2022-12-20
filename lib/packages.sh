@@ -10,7 +10,7 @@ function packages::get {
     # 3. converts the merged object into a key/value pair
     # 4. transform each entry into a string like: `[key]="value"`
     # 5. separates each entry by spaces and puts all of it between parentheses, as the following: ([key1]="value1" [key2]="value2" [keyN]="valueN")
-    echo "${__RAW_JSON__}" | jq -r '."packages"."'${package}'" | { name: "'${package}'", url, executable } + .metadata | to_entries | map("[\(.key)]=\"\(.value)\"") | "(\(join(" ")))"'
+    echo "${__RAW_JSON__}" | jq -r '."binary-packages"."'${package}'" | { name: "'${package}'", url, executable } + .metadata | to_entries | map("[\(.key)]=\"\(.value)\"") | "(\(join(" ")))"' 2> /dev/null
 }
 
 function packages::get_ppa {
@@ -21,11 +21,11 @@ function packages::get_ppa {
     # 3. converts the object into a key/value pair
     # 4. transform each entry into a string like: `[key]="value"`
     # 5. separates each entry by spaces and puts all of it between parentheses, as the following: ([key1]="value1" [key2]="value2" [keyN]="valueN")
-    echo "${__RAW_JSON__}" | jq -r '."custom-ppa-repositories"."'${package}'" | { name: "'${package}'" } + . + { categories: .categories | join(" ") } | to_entries | map("[\(.key)]=\"\(.value)\"") | "(\(join(" ")))"'
+    echo "${__RAW_JSON__}" | jq -r '."custom-ppa-repositories"."'${package}'" | { name: "'${package}'" } + . + { categories: .categories | join(" ") } | to_entries | map("[\(.key)]=\"\(.value)\"") | "(\(join(" ")))"' 2> /dev/null
 }
 
 function packages::system_requirements {
-    echo "${__RAW_JSON__}" | jq -rc '."system-requirements" | join(" ")'
+    echo "${__RAW_JSON__}" | jq -rc '."system-requirements" | join(" ")' 2> /dev/null
 }
 
 function packages::list {
@@ -33,14 +33,16 @@ function packages::list {
 
     # 1. filters by the given group package
     # 2. extracts all the keys (property names) of the given group
-    # 3. returns the array keys as a string (-c instructs jq to compact the output)
-    echo "${__RAW_JSON__}" | jq -rc '."'${group}'" | keys | .[]'
+    # 3. if the element is an object, it will extract all of its keys. Otherwise, it will return the element itself.
+    # 4. returns all entries as a string separated by a space (-c instructs jq to compact the output)
+    echo "${__RAW_JSON__}" | jq -rc '."'${group}'" | if type == "object" then keys else . end | join(" ")' 2> /dev/null
 }
 
-function packages::groups {
-    # 1. extracts all the keys (property names) from the root node
-    # 2. returns the array keys as a string (-c instructs jq to compact the output)
-    echo "${__RAW_JSON__}" | jq -rc '. | keys | .[]' 2> /dev/null
+function packages::executables {
+    # 1. filters all executables using the recursive descent statement (..)
+    # 2. combines the prior result with the all ppa packages
+    # 3. returns all entries as a string separated by a space (-c instructs jq to compact the output)
+    echo "${__RAW_JSON__}" | jq -rc '[..|.executable? | select(. != null)] + ."ppa-packages" | join(" ")' 2> /dev/null
 }
 
 function packages::extension {
@@ -54,14 +56,6 @@ function packages::extension {
             echo ""
         ;;
     esac
-}
-
-function packages::find_executables {
-    # 1. combines the `package` and `custom-ppa-repositories` properties into a single object
-    # 2. converts the merged object into a key/value pair
-    # 3. transforms the key/pair entry into a comma separated value (CSV) string
-    # 4. returns the array as a string (-c instructs jq to compact the output)
-    echo "${__RAW_JSON__}" | jq -rc '.packages + ."custom-ppa-repositories" | to_entries | map("\(.key),\(.value.executable)") | .[]'
 }
 
 function packages::url {

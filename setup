@@ -9,70 +9,80 @@ __JSON_PACKAGES=$(cat package.json)
 . $__BASE_DIR/lib/packages.sh
 . $__BASE_DIR/lib/installer.sh
 
+summary=()
+
 function main {
     
-    for group in $(packages::groups); do
-
-        console::title "Working on ${group}"
-
-        case "${group}" in 
-            "packages")
-                install_packages
-            ;;
-            "custom-ppa-repositories")
-                install_from_custom_ppa
-            ;;
-        esac
-    done
-
-    report
+    install_from_ppa_packages
+    install_from_binary_packages
+    install_from_custom_ppa
+    
+    installation_summary
     installer::cleanup
 }
 
-function install_packages {
-    local packages=$(packages::list "packages")
+function install_from_ppa_packages {
+    local packages=($(packages::list "ppa-packages"))
 
+    console::linebreak
+    console::info "Trying to install/upgrade the following packages: ^${packages[*]}^"
+    console::linebreak
+
+    installer::install_from_apt "${packages[@]}"
+
+    console::linebreak
+    console::success "Done"   
+}
+
+function install_from_binary_packages {
+    local packages=$(packages::list "binary-packages")
+
+    console::linebreak
+    console::info "Processing ^binary packages^ ..."
+    
     for package in $packages; do
-        console::info "Installing ${package}"
+        console::linebreak
+        console::info "Installing binary package ^${package}^"
+        
         installer::install_from_archive "${package}"
-        console::break_line
     done
 
-    console::log "Done"
+    console::linebreak
+    console::success "Done"
 }
 
 function install_from_custom_ppa {
     local packages=$(packages::list "custom-ppa-repositories")
 
+    console::linebreak
+    console::info "Processing ^custom PPA repositories^ ..."
+    console::linebreak
+
     for package in $packages; do
-        console::notice "Adding the custom PPA repository for ${package}"
+        console::info "Adding the custom PPA repository for the package ^${package}^"
         installer::add_custom_ppa "${package}"
     done
 
-    console::break_line
-
-    console::info "Installing/Upgrading packages: ${packages}"
+    console::linebreak
+    console::info "Trying to install/upgade packages: ^${packages}^"
     installer::install_from_apt "${packages[@]}"
 
-    console::log "Done"
+    console::success "Done"
 }
 
-function report {
-    local result=$(packages::find_executables)
+function installation_summary {
+    local packages=$(packages::executables)
 
-    console::header "Packages Installation Report"
-
-    for entry in $result; do
-        local package=$(echo "${entry}" | awk -F "," '{print $1}')
-        local executable=$(echo "${entry}" | awk -F "," '{print $2}')
-        
-        [[ $(installer::already_installed "${executable}") ]] && local status="Installed" || local status="Not Installed"
-
-        local message=$(console::pad_end "${package} " "." "35")
-        console::info "${message} \e[${FG_COLOR_DARK_GRAY}m${status}"
+    console::linebreak
+    
+    for package in $packages; do
+        if [[ $(installer::already_installed "${package}") ]]; then
+            console::success "Package ^${package}^ installed"
+        else
+            console::error "Package ^${package}^ not installed"
+        fi
     done
-
-    console::break_line
 }
 
 main
+exit 0

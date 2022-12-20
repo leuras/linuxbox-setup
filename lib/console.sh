@@ -1,11 +1,18 @@
 #!/bin/bash
 
 # color scheme
-__ACCENT__="\e[${FG_COLOR_LIGHT_YELLOW};${BOLD}m"
-__NORMAL__="\e[${FG_COLOR_LIGHT_GRAY};${NORMAL}m"
+readonly __ACCENT__="\e[${BOLD};${FG_COLOR_LIGHT_YELLOW}m"
+readonly __NORMAL__="\e[${NORMAL};${FG_COLOR_LIGHT_GRAY}m"
 
-__SUCCESS__="\e[${FG_COLOR_LIGHT_GREEN};${BOLD}m"
-__FAILURE__="\e[${FG_COLOR_RED};${BOLD}m"
+readonly __SUCCESS__="\e[${BOLD};${FG_COLOR_LIGHT_GREEN}m"
+readonly __FAILURE__="\e[${BOLD};${FG_COLOR_RED}m"
+readonly __DEBUG__="\e[${NORMAL};${FG_COLOR_DARK_GRAY}m"
+
+function console::log {
+    local message="$1"
+
+    echo -e "${__DEBUG__}${message}${__NORMAL__}"
+}
 
 function console::info {
     local message=$(console::highlight "$1")

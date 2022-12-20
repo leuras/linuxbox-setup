@@ -12,17 +12,11 @@
         "vim",
         "zsh"
     ],
-    "ppa-packages": {
-        "fzf": {
-            "executable": "fzf"
-        },
-        "tilix": {
-            "executable": "tilix"
-        },
-        "flameshot": {
-            "executable": "flameshot"
-        }
-    },
+    "ppa-packages": [
+        "fzf",
+        "tilix",
+        "flameshot"
+    ],
     "binary-packages": {
         "sublime-text": {
             "url": "https://www.sublimetext.com/download_thanks?target=x64-deb",
