@@ -23,7 +23,7 @@ function installer::install_from_archive {
 
         installer::download_package "${url}" "${binary}"
 
-        case "${package_type}" in 
+        case "${package[type]}" in 
             "DEB")
                 installer::install_from_deb "$binary"
             ;;
@@ -56,7 +56,7 @@ function installer::add_custom_ppa {
 function installer::already_installed {
     local binary="${1}"
 
-    echo "$(command -v ${binary} 2> /dev/null || dpkg-query -W ${binary})"
+    echo "$(command -v ${binary} 2> /dev/null || dpkg-query -W ${binary} 2> /dev/null)"
 }
 
 function installer::download_package {

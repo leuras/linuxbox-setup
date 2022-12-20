@@ -10,7 +10,8 @@
         "software-properties-common",
         "lsb-release",
         "vim",
-        "zsh"
+        "zsh",
+        "fonts-powerline"
     ],
     "ppa-packages": [
         "fzf",

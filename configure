@@ -1,13 +1,12 @@
 #!/bin/bash
 
-__BASE_DIR=$(dirname "${0}")
-__JSON_PACKAGES=$(cat package.json)
+__BASE_DIR__=$(dirname "${0}")
 
 # import function definitions and variables
-. $__BASE_DIR/lib/colors.sh
-. $__BASE_DIR/lib/console.sh
-. $__BASE_DIR/lib/packages.sh
-. $__BASE_DIR/lib/installer.sh
+. $__BASE_DIR__/lib/colors.sh
+. $__BASE_DIR__/lib/console.sh
+. $__BASE_DIR__/lib/packages.sh
+. $__BASE_DIR__/lib/installer.sh
 
 function main {
     local packages=($(packages::system_requirements))
