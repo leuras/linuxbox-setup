@@ -67,8 +67,10 @@ The [package.json](package.json) file must be structured like the code snippet b
 In order to use `Linuxbox-Setup` script just clone this repository and execute the main script as shown below:
 
 ```bash
-git clone --depth=1 https://github.com/leuras/linuxbox-setup.git
-cd linubox-setup
-./setup
+$ git clone --depth=1 https://github.com/leuras/linuxbox-setup.git
+$ cd linubox-setup
+$ ./configure
+$ ./setup
+$ ./setup-env
 ```
 
