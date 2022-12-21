@@ -1,129 +1,87 @@
 #!/bin/bash
 
-__BASE_DIR=$(dirname "$0")
-__JSON_PACKAGES=$(cat package.json)
+__BASE_DIR__=$(dirname "${0}")
 
 # import functions definition and variables
-. $__BASE_DIR/lib/json.sh
-. $__BASE_DIR/lib/colors.sh
-. $__BASE_DIR/lib/console.sh
-. $__BASE_DIR/lib/installer.sh
+. $__BASE_DIR__/lib/colors.sh
+. $__BASE_DIR__/lib/console.sh
+. $__BASE_DIR__/lib/packages.sh
+. $__BASE_DIR__/lib/installer.sh
+
+summary=()
 
 function main {
-
-    install_required_packages
     
-    for group in $(package_groups); do
+    install_from_ppa_packages
+    install_from_binary_packages
+    install_from_custom_ppa
+    
+    installation_summary
+    installer::cleanup
+}
 
-        console::title "Working on ${group}"
+function install_from_ppa_packages {
+    local packages=($(packages::list "ppa-packages"))
 
-        case "${group}" in 
-            "packages")
-                install_standalone_packages
-            ;;
-            "custom-ppa-repositories")
-                install_from_custom_ppa_repositories
-            ;;
-        esac
+    console::linebreak
+    console::info "Trying to install/upgrade the following packages: ^${packages[*]}^"
+    console::linebreak
+
+    installer::install_from_apt "${packages[@]}"
+
+    console::linebreak
+    console::success "Done"   
+}
+
+function install_from_binary_packages {
+    local packages=$(packages::list "binary-packages")
+
+    console::linebreak
+    console::info "Processing ^binary packages^ ..."
+    
+    for package in $packages; do
+        console::linebreak
+        console::info "Installing binary package ^${package}^"
+        
+        installer::install_from_archive "${package}"
     done
 
-    show_installation_report
-    cleanup_installation
+    console::linebreak
+    console::success "Done"
 }
 
-function install_required_packages {
+function install_from_custom_ppa {
+    local packages=$(packages::list "custom-ppa-repositories")
 
-    console::title "Installing core packages from the oficial PPA respository"
-
-    packages=(
-        wget
-        curl 
-        jq 
-        zip 
-        gdebi 
-        apt-transport-https 
-        ca-certificates 
-        software-properties-common 
-        lsb-release 
-        vim 
-        zsh 
-        fzf 
-        tilix 
-        openjdk-11-jdk 
-        python3 
-        python3-pip 
-        python3-venv
-        flameshot
-    )
-
-    apt_install "${packages[@]}"
-
-    console::log "Done"
-}
-
-function package_groups {
-    local groups_array=$(json_keys "${__JSON_PACKAGES}")
-    
-    echo "$(json_array_to_string_list "${groups_array}")"
-}
-
-function install_standalone_packages {
-    local packages_array=$(json_keys "${__JSON_PACKAGES}" ".packages")
-    local packages=$(json_array_to_string_list "${packages_array}")
+    console::linebreak
+    console::info "Processing ^custom PPA repositories^ ..."
+    console::linebreak
 
     for package in $packages; do
-        local properties=$(json_value "${__JSON_PACKAGES}" ".packages.${package}")
-
-        console::info "Installing ${package}"
-        install_package "${package}" "${properties}"
-
-        console::break_line
+        console::info "Adding the custom PPA repository for the package ^${package}^"
+        installer::add_custom_ppa "${package}"
     done
 
-    console::log "Done"
+    console::linebreak
+    console::info "Trying to install/upgade packages: ^${packages}^"
+    installer::install_from_apt "${packages[@]}"
+
+    console::success "Done"
 }
 
-function install_from_custom_ppa_repositories {
-    local packages_array=$(json_keys "${__JSON_PACKAGES}" ".custom-ppa-repositories")
-    local packages=$(json_array_to_string_list "${packages_array}")
+function installation_summary {
+    local packages=$(packages::executables)
 
-    for package in $packages; do
-        local properties=$(json_value "${__JSON_PACKAGES}" ".custom-ppa-repositories.${package}")
-
-        console::notice "Adding PPA repository for ${package}"
-        add_custom_ppa "${package}" "${properties}"
-    done
-
-    console::break_line
-
-    console::info "Installing/Upgrading packages: ${packages}"
-    apt_install "${packages[@]}"
-
-    console::log "Done"
-}
-
-function show_installation_report {
-    local json_object=$(echo "${__JSON_PACKAGES}" | jq '.packages + ."custom-ppa-repositories" | to_entries | map({(.key|tostring): .value.executable}) | add')
+    console::linebreak
     
-    local packages_array=$(json_keys "${json_object}")
-    local packages=$(json_array_to_string_list "${packages_array}")
-
-    console::header "Packages Installation Report"
-
     for package in $packages; do
-
-        local executable=$(json_value "$json_object" ".${package}")
-        local status=$(is_installed "${executable}")
-
-        [[ -z "${status}" ]] && status="Not Installed" || status="Installed"
-        status="\e[${FG_COLOR_DARK_GRAY}m${status}"
-
-        local message=$(console::pad_end "${package} " "." "35")
-
-        console::info "${message} ${status}"
+        if [[ $(installer::already_installed "${package}") ]]; then
+            console::success "Package ^${package}^ installed"
+        else
+            console::error "Package ^${package}^ not installed"
+        fi
     done
-
-    console::break_line
 }
 
 main
+exit 0

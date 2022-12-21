@@ -1,60 +1,44 @@
 #!/bin/bash
 
-function console::header {
-    local message="$1"
+# color scheme
+readonly __ACCENT__="\e[${BOLD};${FG_COLOR_LIGHT_YELLOW}m"
+readonly __NORMAL__="\e[${NORMAL};${FG_COLOR_LIGHT_GRAY}m"
 
-    local frame_style="\e[${FG_COLOR_CYAN};${BOLD}m"
-    local title_style="\e[${FG_COLOR_LIGHT_GREEN}m"
-    local reset_style="\e[${FG_COLOR_DEFAULT};${NORMAL}m"
-
-    local title="${title_style}${message}${frame_style}"
-
-    echo -e "${frame_style}"
-    echo -e "==============================( $title )=============================="
-    echo -e "${reset_style}"
-}
-
-function console::title {
-    local message="$1"
-
-    echo -e "\n\e[${FG_COLOR_LIGHT_YELLOW};${BOLD}m[*] \e[${FG_COLOR_LIGHT_GREEN}m${message}\e[${FG_COLOR_DEFAULT};${NORMAL}m"
-}
-
-function console::info {
-    local message="$1"
-
-    echo -e "\e[${FG_COLOR_CYAN};${BOLD}m[i] \e[${FG_COLOR_LIGHT_YELLOW}m${message}\e[${FG_COLOR_DEFAULT};${NORMAL}m"
-}
-
-function console::notice {
-    local message="$1"
-
-    echo -e "\e[${FG_COLOR_LIGHT_MAGENTA};${BOLD}m[!] \e[${FG_COLOR_LIGHT_YELLOW}m${message}\e[${FG_COLOR_DEFAULT};${NORMAL}m"
-}
+readonly __SUCCESS__="\e[${BOLD};${FG_COLOR_LIGHT_GREEN}m"
+readonly __FAILURE__="\e[${BOLD};${FG_COLOR_RED}m"
+readonly __DEBUG__="\e[${NORMAL};${FG_COLOR_DARK_GRAY}m"
 
 function console::log {
     local message="$1"
 
-    echo -e "\e[${FG_COLOR_DARK_GRAY}m${message}\e[${FG_COLOR_DEFAULT};${NORMAL}m"
+    echo -e "${__DEBUG__}${message}${__NORMAL__}"
 }
 
-function console::break_line {
+function console::info {
+    local message=$(console::highlight "$1")
+
+    echo -e "${__NORMAL__}${message}${__NORMAL__}"
+}
+
+function console::success {
+    local message=$(console::highlight "$1")
+
+    # \xE2\x9C\x94 is the hex equivalent value to the unicode value U+2714
+    echo -e "${__NORMAL__}${message} ${__SUCCESS__}\xE2\x9C\x94${__NORMAL__}"
+}
+
+function console::error {
+    local message=$(console::highlight "$1")
+
+    # \xE2\x9C\x98 is the hex equivalent value to the unicode value U+2718
+    echo -e "${__NORMAL__}${message} ${__FAILURE__}\xE2\x9C\x98${__NORMAL__}"
+}
+
+function console::highlight {
+    # Looks for the highlight pattern of elements within a given string
+    echo "$(echo "$1" | sed -E 's/\^([a-zA-Z \/\._-]+)\^/'"\\${__ACCENT__}"'\1'"\\${__NORMAL__}"'/g')"
+}
+
+function console::linebreak {
     echo ""
-}
-
-function console::pad_end {
-    local value="$1"
-    local char="$2"
-    local length="$3"
-
-    local chars=$(echo "${value}" | wc -c)
-    local limit=$(($length - $chars))
-
-    local new_value="${value}"
-
-    for i in $(seq 1 $limit); do
-        new_value="${new_value}${char}"
-    done
-
-    echo "${new_value}"
 }

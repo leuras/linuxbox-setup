@@ -1,0 +1,39 @@
+#!/bin/bash
+
+readonly __BASE_DIR__=$(dirname "${0}")
+
+# import functions definition and variables
+. $__BASE_DIR__/lib/colors.sh
+. $__BASE_DIR__/lib/console.sh
+. $__BASE_DIR__/lib/ohmyzsh.sh
+
+# scripts variables
+readonly __SCRIPTS_PATH__="${__BASE_DIR__}/scripts"
+readonly __LOCAL_PATH__="${HOME}/.local/bin"
+
+function main {
+    oh_my_zsh::install
+    oh_my_zsh::set_theme
+    oh_my_zsh::pos_install
+
+    console::linebreak
+    oh_my_zsh::summary
+
+    console::linebreak
+    console::info "Setting up scripts ..."
+
+    mkdir -p "${__LOCAL_PATH__}"
+
+    for filename in $(ls -A "${__SCRIPTS_PATH__}"); do
+        local script="${__LOCAL_PATH__}/${filename}"
+
+        console::info "Copying script ^${filename}^ to ^${script}^"
+        cp "${__SCRIPTS_PATH__}/${filename}" "${script}" 2> /dev/null && chmod +x "${script}"       
+    done
+
+    console::linebreak
+    console::success "Environment setup completed!"
+}
+
+main
+exit 0

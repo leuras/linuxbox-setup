@@ -1,88 +1,33 @@
-#!/bin/zsh
+#!/bin/bash
 
-# zsh as default shell
-chsh -s $(which zsh)
+__BASE_DIR__=$(dirname "${0}")
 
-# oh-my-zsh
-ZSH=${ZSH:-"${HOME}/.oh-my-zsh"}
-ZSH_CUSTOM=${ZSH_CUSTOM:-"${ZSH}/custom"}
-ZSHRC="${HOME}/.zshrc"
+# import function definitions and variables
+. $__BASE_DIR__/lib/colors.sh
+. $__BASE_DIR__/lib/console.sh
+. $__BASE_DIR__/lib/packages.sh
+. $__BASE_DIR__/lib/installer.sh
 
-if [[ ! -d "${ZSH}" ]]; then
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-fi;
+function main {
+    local packages=($(packages::system_requirements))
 
-# oh-my-zsh > theme
-SPACESHIP_HOME="${ZSH_CUSTOM}/themes/spaceship-prompt"
+    console::info "Trying to install/upgrade the following system required packages: ^${packages[*]}^"
+    console::linebreak
 
-if [[ ! -d "${SPACESHIP_HOME}" ]]; then
-    SPACESHIP_REMOTE="https://github.com/spaceship-prompt/spaceship-prompt.git"
+    installer::install_from_apt "${packages[@]}"
+    console::linebreak
+
+    for package in ${packages[@]}; do
+        if [[ $(installer::already_installed "${package}") ]]; then
+            console::success "Package ^${package}^ installed"
+        else
+            console::error "Package ^${package}^ not installed"
+        fi
+    done
     
-    git clone --depth=1 "${SPACESHIP_REMOTE}" "${SPACESHIP_HOME}"
-    ln -s "${SPACESHIP_HOME}/spaceship.zsh-theme" "$ZSH_CUSTOM/themes/spaceship.zsh-theme"
-    sed -i 's/ZSH_THEME=\".\+\"/ZSH_THEME="spaceship"/' "${ZSHRC}"
-fi;
+    console::linebreak
+    console::success "Configuration Completed!"
+}
 
-# oh-my-zsh > theme > options
-echo "[+] Configuring spaceship theme"
-
-sed -zri 's/SPACESHIP_PROMPT_ORDER=\([[:cntrl:][:print:]]+\)//g' "${ZSHRC}"
-sed -zri 's/\n{3,}/\n/g' "${ZSHRC}"
-
-cat << 'SPACESHIP_OPTIONS' >> "${ZSHRC}"
-
-SPACESHIP_PROMPT_ORDER=(
-time          # Time stamps section
-user          # Username section
-dir           # Current directory section
-host          # Hostname section
-git           # Git section (git_branch + git_status)
-package       # Package version
-node          # Node.js section
-docker        # Docker section
-aws           # Amazon Web Services section
-gcloud        # Google Cloud Platform section
-venv          # virtualenv section
-pyenv         # Pyenv section
-dotnet        # .NET section
-kubectl       # Kubectl context section
-exec_time     # Execution time
-line_sep      # Line break
-vi_mode       # Vi-mode indicator
-jobs          # Background jobs indicator
-exit_code     # Exit code section
-char          # Prompt character
-)
-
-SPACESHIP_OPTIONS
-
-# oh-my-zsh > plugins
-sed -i 's/plugins=\(.\+\)/plugins=(git fzf virtualenv)/' "${ZSHRC}"
-
-# apply shell changes
-source "${HOME}/.zshrc"
-
-# python > pentest virtual env
-if [[ "${USER}" == "pentester" ]]; then
-    echo "[+] Applying some specific configurations for pentesting"
-    
-    VENV_HOME="${HOME}/.python-venv"
-    PENTEST_VENV_HOME="${VENV_HOME}/pentest"
-
-    if [[ ! -d "${PENTEST_VENV_HOME}" ]]; then
-        mkdir -p "${VENV_HOME}"
-        python3 -m venv "${PENTEST_VENV_HOME}"
-
-        echo "source ${PENTEST_VENV_HOME}/bin/activate" >> "${HOME}/.zprofile"
-        source "${HOME}/.zprofile"
-    fi;
-fi;
-
-# Git Prune Script
-LOCAL_BIN_PATH="${HOME}/.local/bin"
-if [[ ! -f  "${LOCAL_BIN_PATH}/git-prune" ]]; then
-    mkdir -p "${LOCAL_BIN_PATH}"
-
-    echo "[+] Copying git-prune script to ${LOCAL_BIN_PATH}"
-    cp scripts/git-prune "${LOCAL_BIN_PATH}" && chmod +x "${LOCAL_BIN_PATH}/git-prune"
-fi;
+main
+exit 0

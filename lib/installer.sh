@@ -1,155 +1,105 @@
 #!/bin/bash
 
-# private variables
-readonly __KEYRING_DIR="/etc/apt/keyrings"
-readonly __LINUXBOX_SETUP_DIR="/tmp/linuxbox-setup-$(cat /proc/sys/kernel/random/uuid)"
-readonly __SUDO=$(which sudo)
+readonly __KEYRING_DIR__="/etc/apt/keyrings"
+readonly __SETUP_DIR__="/tmp/linuxbox-setup-$(cat /proc/sys/kernel/random/uuid)"
+readonly __SUDO__=$(which sudo)
 
-function install_package {
-    local package="$1"
-    local properties="$2"
+function installer::install_from_apt {
+    # converts a string list in an array of strings
+    local packages=("$@")
+    
+    $__SUDO__ apt update && $__SUDO__ apt install -y "${packages[@]}"
+}
 
-    local executable=$(json_value "$properties" ".executable")
-    local status=$(is_installed "${executable}")
+function installer::install_from_archive {
+    declare -A package=$(packages::get "${1}")
 
-    if [[ -z "${status}" ]]; then
+    if [[ ! $(installer::already_installed "${package[executable]}") ]]; then
 
-        local url=$(json_value "$properties" ".url")
-        local metadata="$(json_value "${properties}" ".metadata")"
-        local resolved_url=$(__resolve_url "${package}" "${url}" "${metadata}")
-
-        local package_type=$(json_value "${metadata}" ".type")
-        local extension=$(__package_extension "${package_type}")
+        local url=$(packages::url "$(typeset -p package)")
+        local extension=$(packages::extension "${package[type]}")
         
-        [[ -z "${extension}" ]] && local binary="${package}" || local binary="${package}.${extension}"
+        [[ -z "${extension}" ]] && local binary="${package[name]}" || local binary="${package[name]}.${extension}"
 
-        __get_package "${resolved_url}" "${binary}"
+        installer::download_package "${url}" "${binary}"
 
-        case "${package_type}" in 
+        case "${package[type]}" in 
             "DEB")
-                __install_deb "$binary"
+                installer::install_from_deb "$binary"
             ;;
             "BINARY")
-                __install_binary "${binary}"
+                installer::install_from_binary "${binary}"
             ;;
         esac
     else
-        console::log "Package ${package} is already installed."
+        console::log "Package ${package[name]} is already installed."
     fi
 }
 
-function add_custom_ppa {
-    local package="$1"
-    local properties="$2"
+function installer::add_custom_ppa {
+    declare -A package=$(packages::get_ppa "${1}")
 
-    local executable=$(json_value "$properties" ".executable")
-    local status=$(is_installed "${executable}")
+    if [[ ! $(installer::already_installed "${package[executable]}") ]]; then
 
-    if [[ -z "${status}" ]]; then
-
-        local gpg_url=$(json_value "${properties}" ".gpg-url")
-        local ppa_url=$(json_value "${properties}" ".ppa-url")
-        local distribution=$(json_value "${properties}" ".distribution")
-        local categories_array=$(json_value "${properties}" ".categories")
-        local categories=$(json_array_to_string_list "${categories_array}")
-
-        local keyring_file="${__KEYRING_DIR}/${package}.gpg"
-        local content="deb [arch=$(dpkg --print-architecture) signed-by=${keyring_file}] ${ppa_url} ${distribution} ${categories}"
+        local keyring_file="${__KEYRING_DIR__}/${package[name]}.gpg"
+        local content="deb [arch=$(dpkg --print-architecture) signed-by=${keyring_file}] ${package[ppa-url]} ${package[distribution]} ${package[categories]}"
         
-        $__SUDO mkdir -p "${__KEYRING_DIR}"
-        curl -fsSL "${gpg_url}" | $__SUDO gpg --dearmor -o "${keyring_file}"
-        echo "${content}" | $__SUDO tee "/etc/apt/sources.list.d/${package}.list" > /dev/null
+        $__SUDO__ mkdir -p "${__KEYRING_DIR__}"
+
+        curl -fsSL "${package[gpg-url]}" | $__SUDO__ gpg --dearmor -o "${keyring_file}"
+        echo "${content}" | $__SUDO__ tee "/etc/apt/sources.list.d/${package[name]}.list" > /dev/null
     else
-        console::log "Package ${package} is already installed."
+        console::log "Package ${package[name]} is already installed."
     fi
 }
 
-function apt_install {
-    local packages=("$@")
-    
-    $__SUDO apt update && $__SUDO apt install -y "${packages[@]}"
-}
+function installer::already_installed {
+    local binary="${1}"
+    local binary_path="$(command -v ${binary} 2> /dev/null || dpkg-query -W ${binary} 2> /dev/null)"
 
-function is_installed {
-    local binary="$1"
-
-    echo "$(command -v ${binary} 2> /dev/null)"
-}
-
-function cleanup_installation {
-    rm -rf "${__LINUXBOX_SETUP_DIR}"
-}
-
-function __resolve_url {
-    local package="$1"
-    local url="$2"
-    local metadata="$3" 
-
-    local direct_link=$(json_value "${metadata}" ".direct-link")
-    
-    if [[ "${direct_link}" == "false" ]]; then
-        echo "$(__latest_release "${url}" "${metadata}")"
-    else
-        echo "${url}"
+    # if the given executable isn't in the system path, look for it in the /opt folder
+    if [[ -z "${binary_path}" ]]; then
+        binary_path="$(find /opt/*/ -maxdepth 3 -type f -name "${binary}" -printf '%d %p\n' | sort | awk '{print $2}' | head -n 1)"
     fi
+
+    echo "${binary_path}"
 }
 
-function __latest_release {
-    local url="$1"
-    local metadata="$2"
-
-    local release=$(json_value "${metadata}" ".release-name")
-    local package_type=$(json_value "${metadata}" ".type")
-    local extension=$(__package_extension "${package_type}")
-
-    echo "$(curl -sL "${url}" | grep -Eio "(https?:\/{2}[a-z0-9\._?=\/-]+${release}[a-z0-9_\.-]*\.?${extension})" | uniq | head -n 1)"    
-}
-
-function __package_extension {
-    local package_type="$1"
-
-    case "${package_type}" in
-        "DEB")
-            echo "deb"
-        ;;
-        *) 
-            echo ""
-        ;;
-    esac
-}
-
-function __get_package {
-    local url="$1"
-    local binary="$2"
+function installer::download_package {
+    local url="${1}"
+    local binary="${2}"
     
-    mkdir -p "${__LINUXBOX_SETUP_DIR}"
-    wget -v -O "${__LINUXBOX_SETUP_DIR}/${binary}" "${url}"
+    mkdir -p "${__SETUP_DIR__}"
+    wget -v -O "${__SETUP_DIR__}/${binary}" "${url}"
 }
 
-function __install_deb {
-    local binary="$1"
+function installer::install_from_deb {
+    local binary="${1}"
 
-    $__SUDO gdebi -n "${__LINUXBOX_SETUP_DIR}/${binary}"
+    $__SUDO__ gdebi -n "${__SETUP_DIR__}/${binary}"
 }
 
-function __install_binary {
-    local package="$1"
+function installer::install_from_binary {
+    local package="${1}"
 
-    local binary="${__LINUXBOX_SETUP_DIR}/${package}"
-    local file_info=$(file -b "${binary}" | awk -F "," '{print $1}')
+    local binary="${__SETUP_DIR__}/${package}"
+    local mime_type=$(file -b --mime-type "${binary}")
 
-    case "${file_info}" in
-        "ELF 64-bit LSB executable")
-            local installation_path="/usr/local/bin/${package}"
+    local installation_path="/opt/${package}"
+    $__SUDO__ mkdir -p "${installation_path}"
 
-            $__SUDO cp "${binary}" "${installation_path}"
-            $__SUDO chmod +x "${installation_path}"
+    case "${mime_type}" in
+        "application/gzip") # tar.gz
+            $__SUDO__ tar -xvzf "${binary}" -C "${installation_path}"
             ;;
-        "gzip compressed data")
-            local installation_path="/opt/${package}"
-
-            $__SUDO mkdir -p "${installation_path}"
-            $__SUDO tar -xvzf "${binary}" -C "${installation_path}"
+        *)
+            $__SUDO__ cp "${binary}" "${installation_path}"
+            $__SUDO__ chmod +x "${installation_path}/${package}"
+            $__SUDO__ ln -s "${installation_path}/${package}" "/usr/local/bin/${package}"
             ;;
     esac
+}
+
+function installer::cleanup {
+    rm -rf "${__SETUP_DIR__}"
 }
