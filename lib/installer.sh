@@ -55,8 +55,14 @@ function installer::add_custom_ppa {
 
 function installer::already_installed {
     local binary="${1}"
+    local binary_path="$(command -v ${binary} 2> /dev/null || dpkg-query -W ${binary} 2> /dev/null)"
 
-    echo "$(command -v ${binary} 2> /dev/null || dpkg-query -W ${binary} 2> /dev/null)"
+    # if the given executable isn't in the system path, look for it in the /opt folder
+    if [[ -z "${binary_path}" ]]; then
+        binary_path="$(find /opt/*/ -maxdepth 3 -type f -name "${binary}" -printf '%d %p\n' | sort | awk '{print $2}' | head -n 1)"
+    fi
+
+    echo "${binary_path}"
 }
 
 function installer::download_package {
@@ -77,20 +83,19 @@ function installer::install_from_binary {
     local package="${1}"
 
     local binary="${__SETUP_DIR__}/${package}"
-    local file_info=$(file -b "${binary}" | awk -F "," '{print ${1}}')
+    local mime_type=$(file -b --mime-type "${binary}")
 
-    case "${file_info}" in
-        "ELF 64-bit LSB executable")
-            local installation_path="/usr/local/bin/${package}"
+    local installation_path="/opt/${package}"
+    $__SUDO__ mkdir -p "${installation_path}"
 
-            $__SUDO__ cp "${binary}" "${installation_path}"
-            $__SUDO__ chmod +x "${installation_path}"
-            ;;
-        "gzip compressed data")
-            local installation_path="/opt/${package}"
-
-            $__SUDO__ mkdir -p "${installation_path}"
+    case "${mime_type}" in
+        "application/gzip") # tar.gz
             $__SUDO__ tar -xvzf "${binary}" -C "${installation_path}"
+            ;;
+        *)
+            $__SUDO__ cp "${binary}" "${installation_path}"
+            $__SUDO__ chmod +x "${installation_path}/${package}"
+            $__SUDO__ ln -s "${installation_path}/${package}" "/usr/local/bin/${package}"
             ;;
     esac
 }
