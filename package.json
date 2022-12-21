@@ -72,17 +72,44 @@
                 "release-name": "docker-compose-Linux-x86_64",
                 "type": "BINARY"
             }
+        },
+        "dropbox": {
+            "url": "https://www.dropbox.com/download?dl=packages/ubuntu/dropbox_2020.03.04_amd64.deb",
+            "executable": "dropbox",
+            "metadata": {
+                "direct-link": true,
+                "release-name": "dropbox",
+                "type": "DEB"
+            }
+        },
+        "intellij": {
+            "url": "https://download.jetbrains.com/idea/ideaIC-2022.3.1-aarch64.tar.gz",
+            "executable": "idea.sh",
+            "metadata": {
+                "direct-link": true,
+                "release-name": "ideaIC",
+                "type": "BINARY"
+            }
         }
     },
     "custom-ppa-repositories": {
         "docker-ce": {
             "gpg-url": "https://download.docker.com/linux/ubuntu/gpg",
             "ppa-url": "https://download.docker.com/linux/ubuntu",
-            "distribution": "focal",
+            "distribution": "jammy",
             "categories": [
                 "stable"
             ],
             "executable": "docker"
+        },
+        "spotify": {
+            "gpg-url": "https://download.spotify.com/debian/pubkey_5E3C45D7B312C643.gpg",
+            "ppa-url": "http://repository.spotify.com",
+            "distribution": "jammy",
+            "categories": [
+                "stable", "non-free"
+            ],
+            "executable": "spotify"
         }
     }
 }
