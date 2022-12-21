@@ -48,6 +48,11 @@ The [package.json](package.json) file must be structured like the code snippet b
         "zsh",
         "fonts-powerline"
     ],
+    "ppa-packages": [
+        "fzf",
+        "tilix",
+        "flameshot"
+    ],
     "binary-packages": {
         "sublime-text": {
             "url": "https://www.sublimetext.com/download_thanks?target=x64-deb",
