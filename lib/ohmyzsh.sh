@@ -25,7 +25,7 @@ function oh_my_zsh::install {
         console::linebreak
 
         curl -fsSL "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh" > "${__INSTALLER__}"
-        chmod +x "${__INSTALLER__}" && "${__INSTALLER__}"
+        chmod +x "${__INSTALLER__}" && "${__INSTALLER__}" --unattended
     else
         console::log "Oh-my-zsh is already installed."
     fi

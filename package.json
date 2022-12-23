@@ -90,6 +90,24 @@
                 "release-name": "ideaIC",
                 "type": "BINARY"
             }
+        },
+        "chrome": {
+            "url": "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb",
+            "executable": "chrome",
+            "metadata": {
+                "direct-link": true,
+                "release-name": "chrome",
+                "type": "DEB"
+            }
+        },
+        "bitwarden": {
+            "url": "https://vault.bitwarden.com/download/?app=desktop&platform=linux&variant=appimage",
+            "executable": "bitwarden",
+            "metadata": {
+                "direct-link": true,
+                "release-name": "bitward",
+                "type": "BINARY"
+            }
         }
     },
     "custom-ppa-repositories": {
@@ -102,10 +120,10 @@
             ],
             "executable": "docker"
         },
-        "spotify": {
+        "spotify-client": {
             "gpg-url": "https://download.spotify.com/debian/pubkey_5E3C45D7B312C643.gpg",
             "ppa-url": "http://repository.spotify.com",
-            "distribution": "jammy",
+            "distribution": "",
             "categories": [
                 "stable", "non-free"
             ],

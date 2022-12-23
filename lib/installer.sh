@@ -8,7 +8,7 @@ function installer::install_from_apt {
     # converts a string list in an array of strings
     local packages=("$@")
     
-    $__SUDO__ apt update && $__SUDO__ apt install -y "${packages[@]}"
+    $__SUDO__ apt update && $__SUDO__ apt install -y ${packages[@]}
 }
 
 function installer::install_from_archive {
