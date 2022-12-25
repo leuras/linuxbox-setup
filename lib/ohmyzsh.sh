@@ -5,6 +5,8 @@ readonly __OH_MY_ZSH__=${ZSH:-"${HOME}/.oh-my-zsh"}
 readonly __INSTALLER__="/tmp/ohmyzsh-install.sh"
 readonly __THEMES__="${__OH_MY_ZSH__}/custom/themes"
 readonly __SPACESHIP_HOME__="${__THEMES__}/spaceship-prompt"
+readonly __RESOURCES_PATH__="${__BASE_DIR__}/resources"
+readonly __ZSHRC__="${HOME}/.zshrc"
 
 function oh_my_zsh::install {
     local current_shell="${SHELL}"
@@ -38,6 +40,19 @@ function oh_my_zsh::set_theme {
 
         git clone --depth=1 "https://github.com/spaceship-prompt/spaceship-prompt.git" "${__SPACESHIP_HOME__}"
         ln -s "${__SPACESHIP_HOME__}/spaceship.zsh-theme" "${__THEMES__}/spaceship.zsh-theme"
+        console::linebreak
+
+        console::info "Backupping ^.zshrc^ file ..."
+        cp "${__ZSHRC__}" "${__ZSHRC__}~" 2> /dev/null
+        
+        console::info "Defining ^plugins section^ ..."
+        sed -i 's/\(plugins\)=([a-zA-Z0-9\s_\-]\+)/\1=(git fzf)/' "${__ZSHRC__}" 2> /dev/null
+
+        console::info "Defining ^spaceshipt-prompt^ as the theme  ..."
+        sed -i 's/\(ZSH_THEME\)="[a-zA-Z0-9\-]\+"/\1="spaceship"/' "${__ZSHRC__}" 2> /dev/null
+
+        console::info "Configuring ^spaceshipt-prompt^ theme ..."
+        cp "${__RESOURCES_PATH__}/.spaceshiprc.zsh" "${HOME}" 2> /dev/null
     else
         console::log "Spaceship-Prompt Theme is already installed."
     fi    

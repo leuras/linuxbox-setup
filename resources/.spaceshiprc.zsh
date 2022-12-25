@@ -1,8 +1,3 @@
-plugins=(
-    git
-    fzf
-)
-
 SPACESHIP_PROMPT_ORDER=(
     time           # Time stamps section
     user          # Username section
@@ -12,15 +7,9 @@ SPACESHIP_PROMPT_ORDER=(
     package       # Package version
     node          # Node.js section
     docker        # Docker section
-    # aws           # Amazon Web Services section
-    # gcloud        # Google Cloud Platform section
-    # venv          # virtualenv section
-    pyenv         # Pyenv section
-    # dotnet        # .NET section
-    # kubectl       # Kubectl context section
+    python        # Pyenv section
     exec_time     # Execution time
     line_sep      # Line break
-    vi_mode       # Vi-mode indicator
     jobs          # Background jobs indicator
     exit_code     # Exit code section
     char          # Prompt character
