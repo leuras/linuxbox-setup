@@ -28,8 +28,17 @@ function main {
         local script="${__LOCAL_PATH__}/${filename}"
 
         console::info "Copying script ^${filename}^ to ^${script}^"
-        cp "${__SCRIPTS_PATH__}/${filename}" "${script}" 2> /dev/null && chmod +x "${script}"       
+        cp "${__SCRIPTS_PATH__}/${filename}" "${script}" 2> /dev/null && chmod +x "${script}"
     done
+
+    local profile="${HOME}/.zprofile"
+
+    if [[ ! -f "${profile}" ]]; then
+        console::info "Initializing ^.zprofile^ ..."
+        echo "path+=(\"${HOME}/.local/bin\")" > "${profile}"
+    else
+        console::log "\".zprofile\" already exists. Please check if \"${HOME}/.local/bin\" is already in the path."
+    fi
 
     console::linebreak
     console::success "Environment setup completed!"
