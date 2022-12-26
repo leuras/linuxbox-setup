@@ -16,6 +16,7 @@
     "ppa-packages": [
         "fzf",
         "tilix",
+        "gnome-tweaks",
         "flameshot"
     ],
     "binary-packages": {
