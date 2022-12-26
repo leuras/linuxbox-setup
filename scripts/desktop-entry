@@ -1,0 +1,83 @@
+#!/bin/bash
+
+set -e
+set -o errexit
+set -o pipefail
+set -o errtrace
+
+readonly __APPLICATIONS__="${HOME}/.local/share/applications"
+readonly __SCRIPT_NAME__="$(basename ${0})"
+
+function main {
+    local name="${1}"
+    local path="${2}"
+    local icon="${3:-}"
+
+    validate_arg "name" "${name}"
+    validate_arg "path" "${path}"
+ 
+    if [[ ! -f "${path}" ]]; then
+        echo "${__SCRIPT_NAME__}: The given path '${path}' does not exist" >&2
+        exit 1
+    fi;
+ 
+    local desktop_file="${__APPLICATIONS__}/${name}.desktop"
+ 
+    echo "[Desktop Entry]" > "${desktop_file}" 
+    echo "Type=Application" >> "${desktop_file}"
+    echo "Name=${name}" >> "${desktop_file}"
+    echo "Exec=${path}" >> "${desktop_file}"
+    echo "Icon=${icon}" >> "${desktop_file}"
+    echo "Terminal=false" >> "${desktop_file}"
+    echo "Categories=Application" >> "${desktop_file}"
+    echo "# StartupWMClass=" >> "${desktop_file}"
+    echo "# StartupNotify=true" >> "${desktop_file}"
+
+}
+
+function validate_arg {
+    local arg="${1}"
+    local argv="${2}"
+
+    if [[ -z "${argv}" ]]; then
+        echo "${__SCRIPT_NAME__}: The argument '${arg}' is required." >&2
+        exit 1
+    fi
+}
+
+function help {
+cat << "HELP"
+Syntax: desktop-entry <options>
+
+options:
+-h  Prints this Help
+-i  Absolute path to the application icon
+-n  Application's name
+-p  Absolute path to the application executable
+HELP
+}
+
+[[ ${#@} == 0 ]] && help
+
+while getopts ":n:p:i:h" arg; do
+    case $arg in
+        h)
+        help && exit 0
+        ;;
+        n)
+        name="${OPTARG}"
+        ;;
+        p)
+        path="${OPTARG}"
+        ;;
+        i)
+        icon="${OPTARG}"
+        ;;
+        \?)
+        echo "${__SCRIPT_NAME__}: Invalid option: -$OPTARG" >&2 && help && exit 1
+        ;;
+    esac
+done
+
+main "${name}" "${path}" "${icon}"
+exit 0
